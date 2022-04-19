@@ -1,0 +1,10 @@
+.v-wrap {
+  display: flex;
+  height: 90vh;
+  align-items: center;
+  overflow: hidden;
+}
+.v-box {
+  margin: 0 auto !important;
+  width: 70em;
+}
