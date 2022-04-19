@@ -1,4 +1,6 @@
 let neo4j = require("neo4j-driver");
+const mongoDriver = require("../Mongo");
+const User = require("../models/user");
 let neo4jdbconnection = neo4j.driver(
   process.env.MOVIE_DATABASE_URL,
   neo4j.auth.basic(
@@ -10,6 +12,69 @@ let neo4jdbconnection = neo4j.driver(
 // @desc    Get User Details By Id
 // @route   GET /api/user/:id
 // @access  Public
+
+const findByUsername = async (req, res) => {
+  const username = req.params.usn;
+  if (!username)
+    return res.status(400).json({ message: "Username Missing." });
+  try {
+    // Connect to the MongoDB cluster
+    let db = await mongoDriver.mongo();
+    const user = await db.collection("users").findOne({username: username});
+    res.status(200).json({ user: user, message: "Task executed successfully" });
+  } catch (err) {
+
+    res.status(400).json({ message: err.message });
+  }
+};
+
+const findByNameAndSurname = async (req, res) => {
+  const {name, surname} = req.body;
+  if (!name || !surname)
+    return res.status(400).json({ message: "Name Missing." });
+  try{
+    let db = await mongoDriver.mongo();
+    const users = await db.collection("users").find(
+        {$and: [
+            {name:{'$regex' : name, '$options' : 'i'}},
+            {surname: {'$regex' : surname, '$options' : 'i'}}
+          ]}).toArray();
+    res.status(200).json({ user: users, message: "Task executed successfully" });
+  } catch (err) {
+
+    res.status(400).json({ message: err.message });
+  }
+};
+
+const findByCountry = async (req, res) => {
+  const country = req.body.country;
+  if (!country)
+    return res.status(400).json({ message: "Country Missing." });
+  try{
+    let db = await mongoDriver.mongo();
+    const users = await db.collection("users").find({country: country}).toArray();
+    res.status(200).json({ user: users, message: "Task executed successfully" });
+  } catch (err) {
+
+    res.status(400).json({ message: err.message });
+  }
+};
+
+const findByNFollowers = async (req, res) => {
+  const {min, max} = req.body;
+  if (!min || !max)
+    return res.status(400).json({ message: "Follower Range Missing." });
+  try{
+    let db = await mongoDriver.mongo();
+    const users = await db.collection("users").aggregate([
+      {$match: {numFollowers: {'$gte': min, '$lte': max}}},
+      {$sort: {numFollowers: -1}}]).toArray();
+    res.status(200).json({ user: users, message: "Task executed successfully" });
+  } catch (err) {
+
+    res.status(400).json({ message: err.message });
+  }
+};
 
 const userById = async (req, res) => {
   const userId = req.params.id;
@@ -44,6 +109,41 @@ const userById = async (req, res) => {
 // @route   POST /api/user
 // @access  Public
 
+const createUserMongo = async (req, res) => {
+  const {username, email, password, gender, name, surname, country, dob} = req.body;
+  if (!username || !email || !password || !gender || !name || !surname || !country || !dob)
+    return res.status(400).json({ message: "User Info Missing." });
+  try{
+    var db = await mongoDriver.mongo();
+    let usr = await db.collection("users").findOne(
+        {$or: [
+            {username: username},
+            {email: email}
+          ]});
+    if (usr === null){
+      let tot = await db.collection("users").count()+ 1
+      var newUser = new User({
+        _id: parseInt(tot),
+        username: username,
+        email: email,
+        password: password,
+        gender: gender,
+        name: name,
+        surname: surname,
+        country: country,
+        dob: dob
+      })
+      await db.collection("users").insertOne(newUser);
+    }else {
+      throw Error("UserID or Email already exists");
+    }
+    res.status(200).json({ user: newUser, message: "User Created successfully" });
+  }catch (err) {
+
+    res.status(400).json({ message: err.message });
+  }
+};
+
 const createUser = async (req, res) => {
   const { username } = req.body;
   if (!username)
@@ -70,9 +170,46 @@ const createUser = async (req, res) => {
   }
 };
 
+const updateUserMongo = async (req, res) => {
+  const {username, new_email, new_password, new_gender, new_name, new_surname, new_country, new_dob} = req.body;
+  if (!username || !new_email || !new_password || !new_gender || !new_name || !new_surname || !new_country || !new_dob)
+    return res.status(400).json({ message: "User Update Info Missing." });
+  try{
+    let newProfileInfo = {
+      email: new_email,
+      password: new_password,
+      gender: new_gender,
+      name: new_name,
+      surname: new_surname,
+      country: new_country,
+      dob: new_dob
+    }
+    let db = await mongoDriver.mongo();
+    await db.collection("users").updateOne({username: username}, {$set: newProfileInfo});
+    res.status(200).json({ user: newProfileInfo, message: "User Updated successfully" });
+  }catch (err) {
+
+    res.status(400).json({ message: err.message });
+  }
+};
+
 // @desc    Delete User Node
 // @route   DELETE /api/user/:id
 // @access  Owner and Admin
+
+const deleteUserMongo = async (req, res) => {
+  const username = req.params.id;
+  if (!username)
+    return res.status(400).json({ message: "Username Missing." });
+  try{
+    let db = await mongoDriver.mongo();
+    await db.collection("users").deleteOne({username: username});
+    res.status(200).json({message: "Task executed successfully" });
+  } catch (err) {
+
+    res.status(400).json({ message: err.message });
+  }
+};
 
 const deleteUser = async (req, res) => {
   const userId = req.params.id;
@@ -213,4 +350,11 @@ module.exports = {
   unfollowUser,
   followedUsers,
   suggestedUsers,
+  findByUsername,
+  findByNFollowers,
+  findByCountry,
+  findByNameAndSurname,
+  createUserMongo,
+  updateUserMongo,
+  deleteUserMongo
 };
