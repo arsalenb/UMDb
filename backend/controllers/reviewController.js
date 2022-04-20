@@ -133,15 +133,17 @@ async function updateMovieRatingDeleting (movie, oldRating, delRating) {
 // @access  User
 
 const createReview = async (req, res) => {
-    const {u_id, username, movieId, title, rating, review_summary, review_detail} = req.body;
-    if (!u_id || !username || !movieId || !title || !rating || !review_summary || !review_detail)
-        return res.status(400).json({ message: "Review Info Missing." });
+    console.log(req.body)
+    const {userId, username, movieId, title, rating, review_summary, review_detail} = req.body;
+    // if (userId==null || username==null || movieId==null || title==null || rating==null || review_summary==null || review_detail==null)
+    //     console.log("IN THE IF")
+    //     return res.status(400).json({ message: "Review Info Missing." });
     try{
         let db = await mongoDriver.mongo();
         let tot = await db.collection("reviews").count() + 15704481 + Math.floor(Math.random() * 1000) + Math.floor(Math.random() * 1000);
         let newReview = new Review({
             _id: "rw" + tot,
-            userId: u_id,
+            userId: userId,
             reviewer: username,
             movieId: movieId,
             rating: rating,
@@ -149,6 +151,7 @@ const createReview = async (req, res) => {
             review_summary: review_summary,
             review_detail: review_detail,
         })
+        console.log(newReview)
         let movie = await db.collection("movies").findOne({_id: movieId})
         if ((movie['reviews']).length >= 20){
             movie['reviews'].push(newReview)

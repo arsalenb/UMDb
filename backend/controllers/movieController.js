@@ -240,11 +240,11 @@ const getPopMovies = async (req, res) => {
     return res.status(400).json({ message: "Page Number Missing." });
   try {
     let db = await mongoDriver.mongo();
-    let skipped = (page-1)* 30
+    let skipped = (page-1)* 28
     const movies = await db.collection("movies").aggregate([
       {$sort: {popularity: -1}},
-      {$project: {title:1, poster_path:1, popularity:1}}
-    ]).skip(skipped).limit(30).toArray();
+      {$project: {title:1, poster_path:1, overview:1, vote_average:1, release_date:1}}
+    ]).skip(skipped).limit(28).toArray();
     res.status(200).json({ movies: movies, message: "Task executed successfully" });
   } catch (err) {
 
