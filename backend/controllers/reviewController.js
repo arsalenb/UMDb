@@ -208,12 +208,62 @@ const deleteReview = async (req, res) => {
     }
 }
 
+const totalReviewsPerYear = async (req, res) => {
+    try {
+        // Connect to the MongoDB cluster
+        let db = await mongoDriver.mongo();
+        const reviews = await db.collection("reviews").aggregate([
+            {$project: {
+                    date :{$toDate: "$review_date"},
+            }},
+            {$project: {
+                    year: {$year: "$date"}
+            }},
+            {$group:{
+                    _id: "$year",
+                    review_per_year: {
+                        $sum: 1
+                    }
+            }},
+            {$sort: {_id:-1}}
+        ]).toArray()
+        res.status(200).json({reviews: reviews, message: "Task executed successfully"});
+    }catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
+const ratingsPerMovie = async (req, res) => {
+    const movieId = req.params.id;
+    if (!movieId)
+        return res.status(400).json({ message: "Movie ID Missing." });
+    try {
+        // Connect to the MongoDB cluster
+        let db = await mongoDriver.mongo();
+        const reviews = await db.collection("reviews").aggregate([
+            {$match: {movieId: movieId}},
+            {$group:{
+                _id: "$rating",
+                rating_count: {
+                    $sum: 1
+                }
+            }},
+            {$sort: {_id:-1}}
+        ]).toArray()
+        res.status(200).json({reviews: reviews, message: "Task executed successfully"});
+    }catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
 module.exports = {
     getReview,
     createReview,
     deleteReview,
     editReview,
     findReviewsOfMovie,
-    getMoreReviewsOfMovie
+    getMoreReviewsOfMovie,
+    totalReviewsPerYear,
+    ratingsPerMovie
 };
 
