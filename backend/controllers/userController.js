@@ -121,7 +121,7 @@ const createUserMongo = async (req, res) => {
             {email: email}
           ]});
     if (usr === null){
-      let tot = await db.collection("users").count()+ 1
+      let tot = await db.collection("users").count() + Math.floor(Math.random() * 100) + Math.floor(Math.random() * 100)
       var newUser = new User({
         _id: parseInt(tot),
         username: username,

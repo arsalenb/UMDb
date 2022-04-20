@@ -23,6 +23,6 @@ router.route("/pop/:p").get(movieController.getPopMovies);
 router.route("/popg").post(movieController.getPopMoviesByGenre);
 router.route("/topy").post(movieController.getTopMoviesByYear);
 router.route("/topyg").post(movieController.getTopMoviesByYearAndGenre);
-router.route("/popg/y").get(movieController.c);
+router.route("/popg/y").get(movieController.getPopGenresPerYear);
 
 module.exports = router;
