@@ -4,6 +4,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const morgan = require("morgan");
 const dotenv = require("dotenv").config();
+const PORT = 5000
 
 const app = express();
 
@@ -32,4 +33,6 @@ app.use("/api/user", require("./routes/api/user"));
 app.use("/api/movie", require("./routes/api/movie"));
 app.use("/api/review", require("./routes/api/review"));
 
-app.listen(5000, () => console.log("Backend is listening on port 5000"));
+app.listen(PORT, () => console.log("Backend is listening on port", PORT));
+
+module.exports ={PORT}

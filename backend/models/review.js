@@ -5,6 +5,9 @@ const reviewSchema = new Schema ({
     _id:{
         type: String
     },
+    userId: {
+        type: Number
+    },
     movieId:{
         type: String
     },
