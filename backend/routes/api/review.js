@@ -7,6 +7,7 @@ router.route("/crtrev").post(reviewController.createReview);
 
 // ---------------------Review Search ------------------
 router.route("/:id").get(reviewController.findReviewsOfMovie);
+router.route("/more/:id").get(reviewController.getMoreReviewsOfMovie);
 
 // ---------------------Review Delete------------------
 router.route("/dltrev").delete(reviewController.deleteReview);

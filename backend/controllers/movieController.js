@@ -102,8 +102,8 @@ const findMovieByLang = async (req, res) => {
 const createMovieMongo = async (req, res) => {
   const {budget, cast, genres, _id, overview, popularity, poster_path, release_date, revenue, runtime, spoken_languages, title, vote_average, vote_count} = req.body;
   console.log(budget, cast, genres, _id, overview, popularity, poster_path, release_date, revenue, runtime, spoken_languages, title, vote_average, vote_count)
-  // if (!budget || !cast || !genres || !_id || !overview || !popularity || !poster_path || !release_date|| !revenue || !runtime || !spoken_languages || !title || !vote_average || !vote_count)
-  //   return res.status(400).json({ message: "Movie Info Missing." });
+  if (!budget || !cast || !genres || !_id || !overview || !popularity || !poster_path || !release_date|| !revenue || !runtime || !spoken_languages || !title || !vote_average || !vote_count)
+    return res.status(400).json({ message: "Movie Info Missing." });
   try{
     let db = await mongoDriver.mongo();
     let newMovie = new Movie({
@@ -285,7 +285,7 @@ const getTopMoviesByYearAndGenre = async (req, res) => {
   }
 };
 
-const c = async (req, res) => {
+const getPopGenresPerYear = async (req, res) => {
   try {
     let db = await mongoDriver.mongo();
     const movies = await db.collection("movies").aggregate([
@@ -340,6 +340,6 @@ module.exports = {
   getPopMoviesByGenre,
   getTopMoviesByYear,
   getTopMoviesByYearAndGenre,
-  c
+  getPopGenresPerYear
 
 };

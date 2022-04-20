@@ -18,18 +18,12 @@ async function getReviewEmbedded(id, movieId){
     }
 }
 
-async function getReview(id, movieId){
+async function getReview(id){
     try {
         // Connect to the MongoDB cluster
         let db = await mongoDriver.mongo();
         let review = await db.collection("reviews").findOne({_id: id});
-        if (review == null){
-            let embedded_rev = await getReviewEmbedded(id, movieId)
-            return embedded_rev[0]
-        }else{
-            return review
-        }
-
+        return review
     } catch (e) {
         throw(e);
     }
@@ -46,6 +40,32 @@ const findReviewsOfMovie = async (req, res) => {
         const reviews = movie["reviews"]
         res.status(200).json({ reviews: reviews, message: "Task executed successfully" });
     } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
+const getMoreReviewsOfMovie = async (req, res) => {
+    const movieId = req.params.id;
+    if (!movieId)
+        return res.status(400).json({ message: "Movie ID Missing." });
+    try {
+        // Connect to the MongoDB cluster
+        let db = await mongoDriver.mongo();
+        let reviews = await db.collection("reviews").aggregate([
+            {$match: {movieId: movieId}},
+            {$project: {
+                    date :{$toDate: "$review_date"},
+                    movieId:1,
+                    title:1,
+                    reviewer:1,
+                    rating:1,
+                    review_detail:1,
+                    review_summary:1,
+            }},
+            {$sort: {date:-1}}
+        ]).skip(20).toArray()
+        res.status(200).json({reviews: reviews, message: "Task executed successfully"});
+    }catch (err) {
         res.status(400).json({ message: err.message });
     }
 };
@@ -92,7 +112,7 @@ const createReview = async (req, res) => {
     //     return res.status(400).json({ message: "Review Info Missing." });
     try{
         let db = await mongoDriver.mongo();
-        let tot = await db.collection("reviews").count() + 15704481 + 1;
+        let tot = await db.collection("reviews").count() + 15704481 + Math.floor(Math.random() * 1000) + Math.floor(Math.random() * 1000);
         let newReview = new Review({
             _id: "rw" + tot,
             userId: u_id,
@@ -101,18 +121,19 @@ const createReview = async (req, res) => {
             rating: rating,
             title: title,
             review_summary: review_summary,
-            review_detail:review_detail,
+            review_detail: review_detail,
         })
         let movie = await db.collection("movies").findOne({_id: movieId})
         if ((movie['reviews']).length >= 20){
             movie['reviews'].push(newReview)
-            let oldest_rev = movie['reviews'][0]
-            await db.collection("reviews").insertOne(oldest_rev)
+            // let oldest_rev = movie['reviews'][0]
+            // await db.collection("reviews").insertOne(oldest_rev)
             movie['reviews'].shift()
         } else{
             movie['reviews'].push(newReview)
         }
         await db.collection("movies").replaceOne({_id: movieId}, movie)
+        await db.collection("reviews").insertOne(newReview)
         await updateMovieRatingCreation(movie, newReview["rating"])
         res.status(200).json({ review: newReview, message: "Review Added successfully" });
     } catch (err) {
@@ -139,12 +160,16 @@ const editReview = async (req, res) => {
         let status = await db.collection("reviews").updateOne({_id: review_id}, editedReview)
 
         if (status["modifiedCount"]===0){
+            throw new Error("Review Not Found!")
+        }else {
             let emb_rev = await getReviewEmbedded(review_id, movieId)
-            let review_to_update = movie["reviews"][emb_rev[1]]
-            review_to_update["review_summary"] = new_review_summary
-            review_to_update["review_detail"] = new_review_detail
-            review_to_update["rating"] = new_rating
-            await db.collection("movies").replaceOne({_id: movieId}, movie)
+            if (emb_rev != null) {
+                let review_to_update = movie["reviews"][emb_rev[1]]
+                review_to_update["review_summary"] = new_review_summary
+                review_to_update["review_detail"] = new_review_detail
+                review_to_update["rating"] = new_rating
+                await db.collection("movies").replaceOne({_id: movieId}, movie)
+            }
         }
 
         await updateMovieRatingEditing(movie, oldRating, new_rating)
@@ -164,17 +189,18 @@ const deleteReview = async (req, res) => {
         let db = await mongoDriver.mongo();
         let review_to_delete = await db.collection("reviews").findOne({_id: review_id});
         let movie = await db.collection("movies").findOne({_id: movieId});
-        let oldRating = movie["vote_average"]
-        if (review_to_delete == null){
-            let x = await getReviewEmbedded(review_id, movieId)
-            let delRating = x[0]["rating"]
-            movie['reviews'].splice(x[1], 1)
-            await db.collection("movies").replaceOne({_id: movieId}, movie)
-            await updateMovieRatingDeleting(movie, oldRating, delRating)
-        } else{
+        let oldVoteAverage = movie["vote_average"]
+        if (review_to_delete != null){
             await db.collection("reviews").deleteOne(review_to_delete)
+            let x = await getReviewEmbedded(review_id, movieId)
+            if (x!=null) {
+                movie['reviews'].splice(x[1], 1)
+                await db.collection("movies").replaceOne({_id: movieId}, movie)
+            }
             let delRating = review_to_delete["rating"]
-            await updateMovieRatingDeleting(movie, oldRating, delRating)
+            await updateMovieRatingDeleting(movie, oldVoteAverage, delRating)
+        } else{
+
         }
         res.status(200).json({ message: "Review Deleted successfully" });
     } catch (e) {
@@ -182,11 +208,12 @@ const deleteReview = async (req, res) => {
     }
 }
 
-
 module.exports = {
     getReview,
     createReview,
     deleteReview,
     editReview,
-    findReviewsOfMovie};
+    findReviewsOfMovie,
+    getMoreReviewsOfMovie
+};
 
