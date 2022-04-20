@@ -25,6 +25,33 @@ function FollowedUsers() {
     fetchData("followed");
     fetchData("suggested");
   }, []);
+
+  const handleFollow = async (userId) => {
+    try {
+      const response = await axios.post(
+        `/api/user/${userId}/follow`,
+
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      fetchData("followed");
+      fetchData("suggested");
+    } catch (err) {}
+  };
+  const handleUnfollow = async (userId) => {
+    try {
+      const response = await axios.delete(
+        `/api/user/${userId}/follow`,
+
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      fetchData("followed");
+      fetchData("suggested");
+    } catch (err) {}
+  };
   return (
     <div style={{ padding: "2em" }}>
       {" "}
@@ -76,11 +103,21 @@ function FollowedUsers() {
                               icon
                               labelPosition="left"
                               size="medium"
+                              onClick={() => {
+                                navigate(`/user/${x?.user_id}`);
+                              }}
                             >
                               <Icon name="angle double right" />
                               Details
                             </Button>
-                            <Button color="red" icon labelPosition="left">
+                            <Button
+                              onClick={() => {
+                                handleUnfollow(x?.user_id);
+                              }}
+                              color="red"
+                              icon
+                              labelPosition="left"
+                            >
                               <Icon name="bookmark outline" />
                               Unfollow
                             </Button>
@@ -147,11 +184,21 @@ function FollowedUsers() {
                               icon
                               labelPosition="left"
                               size="medium"
+                              onClick={() => {
+                                navigate(`/user/${x?.user_id}`);
+                              }}
                             >
                               <Icon name="angle double right" />
                               Details
                             </Button>
-                            <Button secondary icon labelPosition="left">
+                            <Button
+                              onClick={() => {
+                                handleFollow(x?.user_id);
+                              }}
+                              secondary
+                              icon
+                              labelPosition="left"
+                            >
                               <Icon name="podcast" />
                               Follow
                             </Button>

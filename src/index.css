@@ -18,3 +18,7 @@ code {
 .spaceEdit {
   margin-right: 80px !important;
 }
+span,
+strong {
+  text-transform: capitalize;
+}

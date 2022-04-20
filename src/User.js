@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Rating from "@mui/material/Rating";
 import Box from "@mui/material/Box";
 import { Avatar, Grid, Stack, Paper, Divider } from "@mui/material";
@@ -9,9 +9,80 @@ import {
   DateTimeInput,
   DatesRangeInput,
 } from "semantic-ui-calendar-react-yz";
+import { useNavigate, useParams } from "react-router-dom";
+import useAuth from "./hooks/useAuth";
+import axios from "./api/axios";
 import { countryOptions } from "./countryOptions";
+
 function User() {
+  const { id } = useParams();
+  const { auth } = useAuth();
+  const navigate = useNavigate();
+
   const [edit, setEdit] = useState(false);
+  const [profileData, setProfileData] = useState({});
+  const [watchlists, setWatchlists] = useState([]);
+  const [followed, setFollowed] = useState(false);
+  const handleFollow = async () => {
+    try {
+      const response = await axios.post(
+        `/api/user/${id}/follow`,
+
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      fetchIfFollowed();
+      fetchProfileData();
+    } catch (err) {}
+  };
+
+  const handleUnfollow = async () => {
+    try {
+      const response = await axios.delete(
+        `/api/user/${id}/follow`,
+
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      fetchIfFollowed();
+      fetchProfileData();
+    } catch (err) {}
+  };
+  const fetchIfFollowed = async () => {
+    try {
+      const response = await axios.get(`/api/user/followed`, {
+        headers: { "Content-Type": "application/json" },
+      });
+      if (response?.data?.filter((o) => o.user_id == id).length !== 0)
+        setFollowed(true);
+      else setFollowed(false);
+    } catch (err) {}
+  };
+
+  const fetchWatchlist = async () => {
+    try {
+      const watchlists = await axios.get(`/api/watchlist/?id=${id}`, {
+        headers: { "Content-Type": "application/json" },
+      });
+      setWatchlists([...watchlists.data]);
+    } catch (err) {}
+  };
+
+  const fetchProfileData = async () => {
+    try {
+      const profileData = await axios.get(`/api/user/${id}`, {
+        headers: { "Content-Type": "application/json" },
+      });
+      setProfileData({ ...profileData.data });
+    } catch (err) {}
+  };
+  useEffect(() => {
+    fetchWatchlist();
+    fetchProfileData();
+    fetchIfFollowed();
+  }, []);
   let regionNames = new Intl.DisplayNames(["en"], { type: "region" });
   const [country, setCountry] = useState("");
   return (
@@ -20,9 +91,7 @@ function User() {
         <Grid item>
           <Avatar
             alt="Remy Sharp"
-            src={
-              "https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=Arsalen+Bidani"
-            }
+            src={`https://ui-avatars.com/api/?name=${profileData?.username}&background=fff&color=000`}
             sx={{ width: 125, height: 125 }}
           />
         </Grid>
@@ -41,7 +110,7 @@ function User() {
                     fontSize: "1.05em",
                   }}
                 >
-                  {"Arsalen Bidani"}
+                  {profileData?.username}
                 </span>
               </div>
               <div>
@@ -87,7 +156,7 @@ function User() {
                     }}
                   >
                     {" "}
-                    {65}
+                    {profileData?.followers}
                   </span>
                 </div>
                 <div>
@@ -112,7 +181,7 @@ function User() {
                       fontSize: "1.em",
                     }}
                   >
-                    {5}
+                    {profileData?.following}
                   </span>
                 </div>
                 <div>
@@ -137,7 +206,7 @@ function User() {
                       fontSize: "1.em",
                     }}
                   >
-                    {5}
+                    {watchlists.length}
                   </span>
                 </div>
               </Stack>
@@ -145,19 +214,42 @@ function User() {
           </div>
         </Grid>
       </Grid>
-      <Box m={3} style={{ margin: "unset", marginTop: "1.5em" }}>
-        <Stack direction="row" justifyContent="space-between">
-          <Button color="teal" icon labelPosition="left" fluid>
-            {" "}
-            <Icon name="podcast" />
-            Follow User
-          </Button>
-          {/* <Button color="red" icon labelPosition="left">
-            <Icon name="delete" />
-            Delete User
-          </Button> */}
-        </Stack>
-      </Box>
+      {auth?.username && auth?.id != id && (
+        <Box m={3} style={{ margin: "unset", marginTop: "1.5em" }}>
+          <Stack direction="row" justifyContent="space-between">
+            {!followed ? (
+              <Button
+                onClick={handleFollow}
+                color="teal"
+                icon
+                labelPosition="left"
+                fluid
+              >
+                <Icon name="podcast" />
+                Follow User
+              </Button>
+            ) : (
+              <Button
+                onClick={handleUnfollow}
+                color="red"
+                icon
+                labelPosition="left"
+                fluid
+              >
+                <Icon name="bookmark outline" />
+                Unfollow User
+              </Button>
+            )}
+
+            {auth?.roles?.includes("Admin") && (
+              <Button color="red" icon labelPosition="left">
+                <Icon name="delete" />
+                Delete User
+              </Button>
+            )}
+          </Stack>
+        </Box>
+      )}
 
       <Header
         inverted
@@ -373,135 +465,62 @@ function User() {
       >
         Watchlists
       </Header>
-      <Paper
-        style={{
-          textAlign: "left",
-          marginTop: "2em",
-          paddingBottom: "0.5em",
-        }}
-        className="commentCard"
-      >
-        <Grid container wrap="nowrap" spacing={2}>
-          <Grid justifyContent="left" item xs zeroMinWidth>
-            <div style={{ fontSize: "1.14em" }}>
-              <Box m={3} style={{ margin: "unset", marginTop: "0.5em" }}>
-                <Stack direction="row" justifyContent="space-between">
-                  <div>
-                    <span
-                      style={{
-                        textAlign: "left",
-                        fontWeight: 600,
-                        fontSize: "1.03em",
-                      }}
-                    >
-                      Top 20 Comedy
-                    </span>
+      {watchlists?.map((x) => {
+        return (
+          <div key={x?.id}>
+            <Paper
+              style={{
+                textAlign: "left",
+                marginTop: "2em",
+                paddingBottom: "0.5em",
+              }}
+              className="watchlistList"
+            >
+              <Grid container wrap="nowrap" spacing={2}>
+                <Grid justifyContent="left" item xs zeroMinWidth>
+                  <div style={{ fontSize: "1.14em" }}>
+                    <Box m={3} style={{ margin: "unset", marginTop: "0.5em" }}>
+                      <Stack direction="row" justifyContent="space-between">
+                        <div>
+                          <span
+                            style={{
+                              textAlign: "left",
+                              fontWeight: 600,
+                              fontSize: "1.03em",
+                            }}
+                          >
+                            {x?.name}
+                          </span>
+                        </div>
+                        <div>
+                          {" "}
+                          <Button
+                            color="teal"
+                            icon
+                            labelPosition="right"
+                            size="medium"
+                            onClick={() => {
+                              navigate(`/watchlist/${x?.id}`);
+                            }}
+                          >
+                            <Icon name="angle double right" />
+                            Details
+                          </Button>
+                        </div>
+                      </Stack>
+                    </Box>
                   </div>
-                  <div>
-                    {" "}
-                    <Button
-                      color="teal"
-                      icon
-                      labelPosition="left"
-                      size="medium"
-                    >
-                      <Icon name="angle double right" />
-                      Details
-                    </Button>
-                  </div>
-                </Stack>
-              </Box>
-            </div>
-          </Grid>
-        </Grid>
-      </Paper>
-      <Divider className="ReviewDivider" variant="fullWidth" />
-      <Paper
-        style={{
-          textAlign: "left",
-          marginTop: "2em",
-          paddingBottom: "0.5em",
-        }}
-        className="commentCard"
-      >
-        <Grid container wrap="nowrap" spacing={2}>
-          <Grid justifyContent="left" item xs zeroMinWidth>
-            <div style={{ fontSize: "1.14em" }}>
-              <Box m={3} style={{ margin: "unset", marginTop: "0.5em" }}>
-                <Stack direction="row" justifyContent="space-between">
-                  <div>
-                    <span
-                      style={{
-                        textAlign: "left",
-                        fontWeight: 600,
-                        fontSize: "1.03em",
-                      }}
-                    >
-                      Best Sci_Fi of 2021
-                    </span>
-                  </div>
-                  <div>
-                    {" "}
-                    <Button
-                      color="teal"
-                      icon
-                      labelPosition="left"
-                      size="medium"
-                    >
-                      <Icon name="angle double right" />
-                      Details
-                    </Button>
-                  </div>
-                </Stack>
-              </Box>
-            </div>
-          </Grid>
-        </Grid>
-      </Paper>
-      <Divider className="ReviewDivider" variant="fullWidth" />
-      <Paper
-        style={{
-          textAlign: "left",
-          marginTop: "2em",
-          paddingBottom: "0.5em",
-        }}
-        className="commentCard"
-      >
-        <Grid container wrap="nowrap" spacing={2}>
-          <Grid justifyContent="left" item xs zeroMinWidth>
-            <div style={{ fontSize: "1.14em" }}>
-              <Box m={3} style={{ margin: "unset", marginTop: "0.5em" }}>
-                <Stack direction="row" justifyContent="space-between">
-                  <div>
-                    <span
-                      style={{
-                        textAlign: "left",
-                        fontWeight: 600,
-                        fontSize: "1.03em",
-                      }}
-                    >
-                      Most favourite "Western" movies{" "}
-                    </span>
-                  </div>
-                  <div>
-                    {" "}
-                    <Button
-                      color="teal"
-                      icon
-                      labelPosition="left"
-                      size="medium"
-                    >
-                      <Icon name="angle double right" />
-                      Details
-                    </Button>
-                  </div>
-                </Stack>
-              </Box>
-            </div>
-          </Grid>
-        </Grid>
-      </Paper>
-      <Divider className="ReviewDivider" variant="fullWidth" />
+                </Grid>
+              </Grid>
+            </Paper>
+            <Divider
+              style={{ marginBottom: "2em" }}
+              className="watchlistDivider"
+              variant="fullWidth"
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
