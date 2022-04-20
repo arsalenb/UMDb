@@ -15,4 +15,9 @@ router.route("/dltrev").delete(reviewController.deleteReview);
 // ---------------------Review Update------------------
 router.route("/upd").put(reviewController.editReview);
 
+// ---------------------Review Aggregations ------------------
+router.route("/totalrev/year").get(reviewController.totalReviewsPerYear);
+router.route("/ratings/:id").get(reviewController.ratingsPerMovie);
+
+
 module.exports = router;
