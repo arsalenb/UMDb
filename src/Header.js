@@ -11,7 +11,7 @@ function Nav() {
   const [active, setActive] = useState("/");
   const trigger = (
     <span>
-      <strong>{auth?.username}</strong>
+      <strong style={{ textTransform: "capitalize" }}>{auth?.username}</strong>
     </span>
   );
 
@@ -102,8 +102,11 @@ function Nav() {
             <Dropdown trigger={trigger}>
               <Dropdown.Menu>
                 <Dropdown.Item disabled>
-                  <span>
-                    Signed in as <strong>{auth?.username}</strong>
+                  <span style={{ textTransform: "unset" }}>
+                    {"Signed in as"}
+                    <strong>
+                      <span> {auth?.username}</span>
+                    </strong>
                   </span>{" "}
                 </Dropdown.Item>
                 <Dropdown.Item
