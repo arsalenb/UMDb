@@ -26,6 +26,33 @@ function FollowedWatchlists() {
     fetchData("followed");
     fetchData("suggested");
   }, []);
+
+  const handleFollow = async (watchlistId) => {
+    try {
+      const response = await axios.post(
+        `/api/watchlist/${watchlistId}/follow`,
+
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      fetchData("followed");
+      fetchData("suggested");
+    } catch (err) {}
+  };
+  const handleUnfollow = async (watchlistId) => {
+    try {
+      const response = await axios.delete(
+        `/api/watchlist/${watchlistId}/follow`,
+
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      fetchData("followed");
+      fetchData("suggested");
+    } catch (err) {}
+  };
   return (
     <div style={{ padding: "2em" }}>
       <Grid container style={{ color: "white" }}>
@@ -90,11 +117,21 @@ function FollowedWatchlists() {
                               icon
                               labelPosition="left"
                               size="medium"
+                              onClick={() => {
+                                navigate(`/watchlist/${x?.id}`);
+                              }}
                             >
                               <Icon name="angle double right" />
                               Details
                             </Button>
-                            <Button color="red" icon labelPosition="left">
+                            <Button
+                              onClick={() => {
+                                handleUnfollow(x?.id);
+                              }}
+                              color="red"
+                              icon
+                              labelPosition="left"
+                            >
                               <Icon name="bookmark outline" />
                               Unfollow
                             </Button>
@@ -175,11 +212,21 @@ function FollowedWatchlists() {
                               icon
                               labelPosition="left"
                               size="medium"
+                              onClick={() => {
+                                navigate(`/watchlist/${x?.id}`);
+                              }}
                             >
                               <Icon name="angle double right" />
                               Details
                             </Button>
-                            <Button secondary icon labelPosition="left">
+                            <Button
+                              onClick={() => {
+                                handleFollow(x?.id);
+                              }}
+                              secondary
+                              icon
+                              labelPosition="left"
+                            >
                               <Icon name="podcast" />
                               Follow
                             </Button>
