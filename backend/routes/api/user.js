@@ -12,10 +12,6 @@ router.route("/crtmongo").post(userController.createUserMongo);
 
 // ---------------------User Search ------------------
 router.route("/:id").get(userController.userById);
-router.route("/mongo/:usn").get(userController.findByUsername);
-router.route("/fbns").post(userController.findByNameAndSurname);
-router.route("/fbc").post(userController.findByCountry);
-router.route("/fbf").post(userController.findByNFollowers);
 
 // ---------------------User Update ------------------
 router.route("/upd").put(userController.updateUserMongo);

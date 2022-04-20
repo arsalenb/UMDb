@@ -1,6 +1,9 @@
 const mongoDriver = require("../Mongo");
 const Review = require("../models/review");
 
+// @desc    Method to retrieve a SINGLE review embedded in a "Movie" document
+// @route   NONE: called internally
+
 async function getReviewEmbedded(id, movieId){
     try {
         let elt_to_return =[]
@@ -18,16 +21,22 @@ async function getReviewEmbedded(id, movieId){
     }
 }
 
+// @desc    Method to retrieve a review in the MongoDB "review" collection
+// @route   NONE: called internally
+
 async function getReview(id){
     try {
         // Connect to the MongoDB cluster
         let db = await mongoDriver.mongo();
-        let review = await db.collection("reviews").findOne({_id: id});
-        return review
+        return await db.collection("reviews").findOne({_id: id})
     } catch (e) {
         throw(e);
     }
 }
+
+// @desc    Get ALL reviews embedded in a "Movie" document
+// @route   GET /api/review/:id
+// @access  User
 
 const findReviewsOfMovie = async (req, res) => {
     const movieId = req.params.id;
@@ -43,6 +52,10 @@ const findReviewsOfMovie = async (req, res) => {
         res.status(400).json({ message: err.message });
     }
 };
+
+// @desc    Get MORE reviews of a movie from the mongoDB "reviews" collection
+// @route   GET /api/review/more/:id
+// @access  User
 
 const getMoreReviewsOfMovie = async (req, res) => {
     const movieId = req.params.id;
@@ -70,6 +83,9 @@ const getMoreReviewsOfMovie = async (req, res) => {
     }
 };
 
+// @desc    Method to update the "average_vote" and "vote_count" of movie after CREATING a review
+// @route   NONE: called internally
+
 async function updateMovieRatingCreation (movie, rating) {
     try{
         let newAvgRating = ((movie["vote_average"] * movie["vote_count"])+ rating)/ (movie["vote_count"] +1);
@@ -82,6 +98,9 @@ async function updateMovieRatingCreation (movie, rating) {
     }
 }
 
+// @desc    Method to update the "average_vote" and "vote_count" of movie after EDITING a review
+// @route   NONE: called internally
+
 async function updateMovieRatingEditing (movie, oldRating, newRating) {
     try{
         let db = await mongoDriver.mongo();
@@ -92,6 +111,9 @@ async function updateMovieRatingEditing (movie, oldRating, newRating) {
         throw(e);
     }
 }
+
+// @desc    Method to update the "average_vote" and "vote_count" of movie after DELETING a review
+// @route   NONE: called internally
 
 async function updateMovieRatingDeleting (movie, oldRating, delRating) {
     try{
@@ -106,10 +128,14 @@ async function updateMovieRatingDeleting (movie, oldRating, delRating) {
     }
 }
 
+// @desc    Create a review document in the MongoDb "reviews" collection
+// @route   POST /api/review/crtrev
+// @access  User
+
 const createReview = async (req, res) => {
     const {u_id, username, movieId, title, rating, review_summary, review_detail} = req.body;
-    // if (!u_id || !username || !movieId || !title || !rating || !review_summary || !review_detail)
-    //     return res.status(400).json({ message: "Review Info Missing." });
+    if (!u_id || !username || !movieId || !title || !rating || !review_summary || !review_detail)
+        return res.status(400).json({ message: "Review Info Missing." });
     try{
         let db = await mongoDriver.mongo();
         let tot = await db.collection("reviews").count() + 15704481 + Math.floor(Math.random() * 1000) + Math.floor(Math.random() * 1000);
@@ -126,8 +152,6 @@ const createReview = async (req, res) => {
         let movie = await db.collection("movies").findOne({_id: movieId})
         if ((movie['reviews']).length >= 20){
             movie['reviews'].push(newReview)
-            // let oldest_rev = movie['reviews'][0]
-            // await db.collection("reviews").insertOne(oldest_rev)
             movie['reviews'].shift()
         } else{
             movie['reviews'].push(newReview)
@@ -141,6 +165,9 @@ const createReview = async (req, res) => {
     }
 };
 
+// @desc    Edit a review document in the MongoDb "reviews" collection
+// @route   PUT /api/review/upd
+// @access  User
 
 const editReview = async (req, res) => {
     const {review_id, username, movieId, new_rating, new_review_summary, new_review_detail} = req.body;
@@ -160,7 +187,7 @@ const editReview = async (req, res) => {
         let status = await db.collection("reviews").updateOne({_id: review_id}, editedReview)
 
         if (status["modifiedCount"]===0){
-            throw new Error("Review Not Found!")
+            throw Error("Review Not Found!")
         }else {
             let emb_rev = await getReviewEmbedded(review_id, movieId)
             if (emb_rev != null) {
@@ -179,6 +206,10 @@ const editReview = async (req, res) => {
         res.status(400).json({ message: err.message });
     }
 };
+
+// @desc    Delete a review document from the MongoDb "reviews" collection
+// @route   DELETE /api/review/dltrev
+// @access  User
 
 const deleteReview = async (req, res) => {
     const {review_id, movieId} = req.body;
@@ -208,6 +239,10 @@ const deleteReview = async (req, res) => {
     }
 }
 
+// @desc    Get the total reviews posted per year
+// @route   GET /api/review/totalrev/year
+// @access  User
+
 const totalReviewsPerYear = async (req, res) => {
     try {
         // Connect to the MongoDB cluster
@@ -232,6 +267,10 @@ const totalReviewsPerYear = async (req, res) => {
         res.status(400).json({ message: err.message });
     }
 };
+
+// @desc    Get the distribution of the rating scores per movie
+// @route   GET /api/review/ratings/:id
+// @access  User
 
 const ratingsPerMovie = async (req, res) => {
     const movieId = req.params.id;

@@ -13,69 +13,6 @@ let neo4jdbconnection = neo4j.driver(
 // @route   GET /api/user/:id
 // @access  Public
 
-const findByUsername = async (req, res) => {
-  const username = req.params.usn;
-  if (!username)
-    return res.status(400).json({ message: "Username Missing." });
-  try {
-    // Connect to the MongoDB cluster
-    let db = await mongoDriver.mongo();
-    const user = await db.collection("users").findOne({username: username});
-    res.status(200).json({ user: user, message: "Task executed successfully" });
-  } catch (err) {
-
-    res.status(400).json({ message: err.message });
-  }
-};
-
-const findByNameAndSurname = async (req, res) => {
-  const {name, surname} = req.body;
-  if (!name || !surname)
-    return res.status(400).json({ message: "Name Missing." });
-  try{
-    let db = await mongoDriver.mongo();
-    const users = await db.collection("users").find(
-        {$and: [
-            {name:{'$regex' : name, '$options' : 'i'}},
-            {surname: {'$regex' : surname, '$options' : 'i'}}
-          ]}).toArray();
-    res.status(200).json({ user: users, message: "Task executed successfully" });
-  } catch (err) {
-
-    res.status(400).json({ message: err.message });
-  }
-};
-
-const findByCountry = async (req, res) => {
-  const country = req.body.country;
-  if (!country)
-    return res.status(400).json({ message: "Country Missing." });
-  try{
-    let db = await mongoDriver.mongo();
-    const users = await db.collection("users").find({country: country}).toArray();
-    res.status(200).json({ user: users, message: "Task executed successfully" });
-  } catch (err) {
-
-    res.status(400).json({ message: err.message });
-  }
-};
-
-const findByNFollowers = async (req, res) => {
-  const {min, max} = req.body;
-  if (!min || !max)
-    return res.status(400).json({ message: "Follower Range Missing." });
-  try{
-    let db = await mongoDriver.mongo();
-    const users = await db.collection("users").aggregate([
-      {$match: {numFollowers: {'$gte': min, '$lte': max}}},
-      {$sort: {numFollowers: -1}}]).toArray();
-    res.status(200).json({ user: users, message: "Task executed successfully" });
-  } catch (err) {
-
-    res.status(400).json({ message: err.message });
-  }
-};
-
 const userById = async (req, res) => {
   const userId = req.params.id;
   if (!req.params.id)
@@ -105,8 +42,8 @@ const userById = async (req, res) => {
   }
 };
 
-// @desc    Create User Node
-// @route   POST /api/user
+// @desc    Create User document in MongoDB "users" collection
+// @route   POST /api/user/crtmongo
 // @access  Public
 
 const createUserMongo = async (req, res) => {
@@ -144,6 +81,10 @@ const createUserMongo = async (req, res) => {
   }
 };
 
+// @desc    Create User Node
+// @route   POST /api/user
+// @access  Public
+
 const createUser = async (req, res) => {
   const { username } = req.body;
   if (!username)
@@ -170,6 +111,10 @@ const createUser = async (req, res) => {
   }
 };
 
+// @desc    Update User document in MongoDB "users" collection
+// @route   PUT /api/user/upd
+// @access  User
+
 const updateUserMongo = async (req, res) => {
   const {username, new_email, new_password, new_gender, new_name, new_surname, new_country, new_dob} = req.body;
   if (!username || !new_email || !new_password || !new_gender || !new_name || !new_surname || !new_country || !new_dob)
@@ -193,9 +138,10 @@ const updateUserMongo = async (req, res) => {
   }
 };
 
-// @desc    Delete User Node
-// @route   DELETE /api/user/:id
-// @access  Owner and Admin
+
+// @desc    Delete User document from MongoDB "users" collection
+// @route   DELETE /api/user/dltmongo/:id
+// @access  User/Admin
 
 const deleteUserMongo = async (req, res) => {
   const username = req.params.id;
@@ -210,6 +156,10 @@ const deleteUserMongo = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+// @desc    Delete User Node
+// @route   DELETE /api/user/:id
+// @access  Owner and Admin
 
 const deleteUser = async (req, res) => {
   const userId = req.params.id;
@@ -350,10 +300,6 @@ module.exports = {
   unfollowUser,
   followedUsers,
   suggestedUsers,
-  findByUsername,
-  findByNFollowers,
-  findByCountry,
-  findByNameAndSurname,
   createUserMongo,
   updateUserMongo,
   deleteUserMongo
