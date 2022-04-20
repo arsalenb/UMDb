@@ -28,131 +28,86 @@ const findMovie = async (req, res) => {
   }
 };
 
-// @desc    Find movie by title
-// @route   POST /api/movie/fbt
+
+// @desc    Filter Movies Dynamically from a form input
+// @route   POST /api/movie/fdynamic
 // @access  Public
 
-const findMovieByTitle = async (req, res) => {
-  const movieTitle = req.body.title;
-  if (!movieTitle)
-    return res.status(400).json({ message: "Movie Title Missing." });
+const findMovieByDynamicFilters = async (req, res) => {
   try{
+    const {title, genre, startRuntime, endRuntime, startDate, endDate, language} = req.body
+    console.log(title, genre, startRuntime, endRuntime, startDate, endDate, language)
+    var query = {$and: [] };
+
+    if (title !== "") { query.$and.push({title:{'$regex' : title, '$options' : 'i'}}) }
+    if (genre!== "") { query.$and.push({genres:{'$regex' : genre, '$options' : 'i'}}) }
+    if (startRuntime!== "") { query.$and.push({runtime: {'$gte': startRuntime}}) }
+    if (endRuntime!=="") { query.$and.push({runtime: {'$lte': endRuntime}}) }
+    if (startDate!== "") { query.$and.push({release_date: {'$gte': new Date(startDate)}}) }
+    if (endDate!== "") { query.$and.push({release_date: {'$lte': new Date (endDate)}}) }
+    if (language!== "") { query.$and.push({spoken_languages: {'$regex' : language, '$options' : 'i'}}) }
+
     let db = await mongoDriver.mongo();
-    const movies = await db.collection("movies").find({title:{'$regex' : movieTitle, '$options' : 'i'}},
-        {projection: {'title':1, 'poster_path':1, 'vote_average':1}}).toArray();
+    const movies = await db.collection("movies").find(query, {projection: {'title':1, 'poster_path':1, 'vote_average':1, 'overview':1}}).toArray();
+
     res.status(200).json({ movies: movies, message: "Task executed successfully" });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
-};
-
-// @desc    Find movie by genre
-// @route   POST /api/movie/fbg
-// @access  Public
-
-const findMovieByGenre = async (req, res) => {
-  const genre = req.body.genre;
-  if (!genre)
-    return res.status(400).json({ message: "Movie genre Missing." });
-  try{
-    let db = await mongoDriver.mongo();
-    const movies = await db.collection("movies").find({genres:{'$regex' : genre, '$options' : 'i'}},
-        {projection: {'title':1, 'poster_path':1, 'vote_average':1}}).limit(20).toArray();
-    res.status(200).json({ movies: movies, message: "Task executed successfully" });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-};
-
-// @desc    Find movie by runtime range
-// @route   POST /api/movie/fbr
-// @access  Public
-
-const findMovieByRuntime = async (req, res) => {
-  const {startRuntime, endRuntime } = req.body;
-  if (!startRuntime || !endRuntime)
-    return res.status(400).json({ message: "Runtime Missing." });
-  try{
-    let db = await mongoDriver.mongo();
-    const movies = await db.collection("movies").find(
-        {runtime: {'$gte': parseInt(startRuntime), '$lte': parseInt(endRuntime)}},
-        {projection: {'title':1, 'poster_path':1, 'vote_average':1, 'runtime':1}}).limit(20).toArray();
-    res.status(200).json({ movies: movies, message: "Task executed successfully" });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-};
-
-// @desc    Find movie by release date range
-// @route   POST /api/movie/fbd
-// @access  Public
-
-const findMovieByRelDate = async (req, res) => {
-  const {startDate, endDate } = req.body;
-  if (!startDate || !endDate)
-    return res.status(400).json({ message: "Date Missing." });
-  try{
-    let db = await mongoDriver.mongo();
-    const movies = await db.collection("movies").find({release_date: {'$gte': new Date(startDate), '$lte': new Date (endDate)}},
-        {projection: {'title':1, 'poster_path':1, 'vote_average':1, 'release_date':1}}).limit(20).toArray();
-    res.status(200).json({ movies: movies, message: "Task executed successfully" });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-};
-
-// @desc    Find movie by language
-// @route   POST /api/movie/fbl
-// @access  Public
-
-const findMovieByLang = async (req, res) => {
-  const lang = req.body.lang;
-  if (!lang)
-    return res.status(400).json({ message: "Date Missing." });
-  try{
-    let db = await mongoDriver.mongo();
-    const movies = await db.collection("movies").find({spoken_languages: {'$regex' : lang, '$options' : 'i'}},
-        {projection: {'title':1, 'poster_path':1, 'vote_average':1, 'spoken_languages':1}}).limit(20).toArray();
-    res.status(200).json({ movies: movies, message: "Task executed successfully" });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-};
+}
 
 // @desc    Create movie document on MongoDB "Movies" Collection
 // @route   POST /api/movie/crtmongo
 // @access  Admin
 
 const createMovieMongo = async (req, res) => {
-  const {budget, cast, genres, _id, overview, popularity, poster_path, release_date, revenue, runtime, spoken_languages, title, vote_average, vote_count} = req.body;
-  console.log(budget, cast, genres, _id, overview, popularity, poster_path, release_date, revenue, runtime, spoken_languages, title, vote_average, vote_count)
-  if (!budget || !cast || !genres || !_id || !overview || !popularity || !poster_path || !release_date|| !revenue || !runtime || !spoken_languages || !title || !vote_average || !vote_count)
-    return res.status(400).json({ message: "Movie Info Missing." });
-  try{
-    let db = await mongoDriver.mongo();
-    let newMovie = new Movie({
-      budget: budget,
-      cast: cast,
-      genres: genres,
-      _id: _id,
-      overview: overview,
-      popularity: popularity,
-      poster_path: poster_path,
-      release_date: release_date,
-      revenue: revenue,
-      runtime: runtime,
-      spoken_languages: spoken_languages,
-      title: title,
-      vote_average: vote_average,
-      vote_count: vote_count,
-    })
-    await db.collection("movies").insertOne(newMovie);
-    res.status(200).json({ movie: newMovie, message: "Movie added successfully" });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
+  // if(req.cains.user.roles.includes("admin")) {
+    const {
+      budget,
+      cast,
+      genres,
+      _id,
+      overview,
+      popularity,
+      poster_path,
+      release_date,
+      revenue,
+      runtime,
+      spoken_languages,
+      title,
+      vote_average,
+      vote_count
+    } = req.body;
+    console.log(budget, cast, genres, _id, overview, popularity, poster_path, release_date, revenue, runtime, spoken_languages, title, vote_average, vote_count)
+    if (budget === null || cast === null || genres === null || _id === null || overview === null || popularity === null || poster_path === null || release_date === null || revenue === null || runtime === null || spoken_languages === null || title === null || vote_average === null || vote_count === null)
+      return res.status(400).json({message: "Movie Info Missing."});
+    try {
+      let db = await mongoDriver.mongo();
+      let newMovie = new Movie({
+        budget: budget,
+        cast: cast,
+        genres: genres,
+        _id: _id,
+        overview: overview,
+        popularity: popularity,
+        poster_path: poster_path,
+        release_date: release_date,
+        revenue: revenue,
+        runtime: runtime,
+        spoken_languages: spoken_languages,
+        title: title,
+        vote_average: vote_average,
+        vote_count: vote_count,
+      })
+      await db.collection("movies").insertOne(newMovie);
+      res.status(200).json({movie: newMovie, message: "Movie added successfully"});
+    } catch (err) {
+      res.status(400).json({message: err.message});
+    }
+  // }else {
+  //   res.status(400).json({message: "ACCESS DENIED"});
+  // }
 };
-
 // @desc    Create Movie Node
 // @route   POST /api/movie
 // @access  Admin
@@ -217,17 +172,21 @@ const deleteMovie = async (req, res) => {
 // @access  Admin
 
 const deleteMovieMongo = async (req, res) => {
-  const movieId = req.params.id;
-  if (!movieId)
-    return res.status(400).json({ message: "Movie ID Missing." });
-  try{
-    let db = await mongoDriver.mongo();
-    await db.collection("movies").deleteOne({_id: movieId});
-    res.status(200).json({ message: "Task executed successfully" });
-  } catch (err) {
+  // if(req.cains.user.roles.includes("admin")) {
+    const movieId = req.params.id;
+    if (!movieId)
+      return res.status(400).json({ message: "Movie ID Missing." });
+    try{
+      let db = await mongoDriver.mongo();
+      await db.collection("movies").deleteOne({_id: movieId});
+      res.status(200).json({ message: "Task executed successfully" });
+    } catch (err) {
 
-    res.status(400).json({ message: err.message });
-  }
+      res.status(400).json({ message: err.message });
+    }
+  // }else {
+  //   res.status(400).json({message: "ACCESS DENIED"});
+  // }
 };
 
 // @desc    Get movies based on "popularity"
@@ -381,11 +340,7 @@ module.exports = {
   createMovie,
   deleteMovie,
   findMovie,
-  findMovieByTitle,
-  findMovieByGenre,
-  findMovieByRuntime,
-  findMovieByRelDate,
-  findMovieByLang,
+  findMovieByDynamicFilters,
   createMovieMongo,
   deleteMovieMongo,
   getPopMovies,

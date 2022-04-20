@@ -8,11 +8,7 @@ router.route("/crtmongo").post(movieController.createMovieMongo);
 
 // ---------------------Movie Search ------------------
 router.route("/:id").get(movieController.findMovie);
-router.route("/fbt").post(movieController.findMovieByTitle);
-router.route("/fbg").post(movieController.findMovieByGenre);
-router.route("/fbr").post(movieController.findMovieByRuntime);
-router.route("/fbd").post(movieController.findMovieByRelDate);
-router.route("/fbl").post(movieController.findMovieByLang);
+router.route("/fdynamic").post(movieController.findMovieByDynamicFilters);
 
 // ---------------------Movie Delete------------------
 router.route("/:id").delete(movieController.deleteMovie);

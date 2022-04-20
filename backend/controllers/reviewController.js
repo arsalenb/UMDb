@@ -1,5 +1,6 @@
 const mongoDriver = require("../Mongo");
 const Review = require("../models/review");
+const PORT = require("../../backend/index.js")
 
 // @desc    Method to retrieve a SINGLE review embedded in a "Movie" document
 // @route   NONE: called internally
@@ -133,14 +134,12 @@ async function updateMovieRatingDeleting (movie, oldRating, delRating) {
 // @access  User
 
 const createReview = async (req, res) => {
-    console.log(req.body)
     const {userId, username, movieId, title, rating, review_summary, review_detail} = req.body;
-    // if (userId==null || username==null || movieId==null || title==null || rating==null || review_summary==null || review_detail==null)
-    //     console.log("IN THE IF")
-    //     return res.status(400).json({ message: "Review Info Missing." });
+    if (userId==null || username==null || movieId==null || title==null || rating==null || review_summary==null || review_detail==null)
+        return res.status(400).json({ message: "Review Info Missing." });
     try{
         let db = await mongoDriver.mongo();
-        let tot = await db.collection("reviews").count() + 15704481 + Math.floor(Math.random() * 1000) + Math.floor(Math.random() * 1000);
+        let tot = await db.collection("reviews").count() + 15704481 + Math.floor(Math.random() * 10000) + Math.floor(Math.random() * 10000);
         let newReview = new Review({
             _id: "rw" + tot,
             userId: userId,
@@ -151,7 +150,6 @@ const createReview = async (req, res) => {
             review_summary: review_summary,
             review_detail: review_detail,
         })
-        console.log(newReview)
         let movie = await db.collection("movies").findOne({_id: movieId})
         if ((movie['reviews']).length >= 20){
             movie['reviews'].push(newReview)
@@ -173,8 +171,9 @@ const createReview = async (req, res) => {
 // @access  User
 
 const editReview = async (req, res) => {
-    const {review_id, username, movieId, new_rating, new_review_summary, new_review_detail} = req.body;
-    if (!review_id || !username || !movieId || !new_rating || !new_review_summary || !new_review_detail)
+    const userId = 5;
+    const {review_id, movieId, new_rating, new_review_summary, new_review_detail} = req.body;
+    if (!review_id || !userId || !movieId || !new_rating || !new_review_summary || !new_review_detail)
         return res.status(400).json({ message: "Review Edit Info Missing." });
     try{
         let db = await mongoDriver.mongo();
@@ -215,8 +214,11 @@ const editReview = async (req, res) => {
 // @access  User
 
 const deleteReview = async (req, res) => {
-    const {review_id, movieId} = req.body;
-    if (!review_id || !movieId)
+    const url = new URL(`http:/localhost:${PORT}/`+ req.url)
+    const review_id = url.searchParams.get("review_id");
+    const movieId = url.searchParams.get('movieId')
+
+    if (review_id==null || movieId==null)
         return res.status(400).json({ message: "Review Info Missing." });
 
     try{
