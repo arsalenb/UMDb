@@ -14,15 +14,12 @@ import {
 import { DateInput } from "semantic-ui-calendar-react-yz";
 import { useNavigate } from "react-router-dom";
 import useAuth from "./hooks/useAuth";
+import axios from "./api/axios";
 import { countryOptions } from "./countryOptions";
 function Profile() {
   const { auth } = useAuth();
   const navigate = useNavigate();
-  useEffect(() => {
-    if (!auth?.username) {
-      navigate("/login");
-    }
-  });
+
   const [edit, setEdit] = useState(false);
   const [casts, setCasts] = useState([{}]);
   const [open, setOpen] = React.useState(false);
@@ -36,15 +33,73 @@ function Profile() {
   const handleRemoveClick = () => {
     setCasts([...casts.slice(0, -1)]);
   };
+  const [watchlists, setWatchlists] = useState([]);
+  const [profileData, setProfileData] = useState({});
+  const [watchlistName, setWatchlistName] = useState("");
+
+  const [errorMessage, setErrorMessage] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const fetchWatchlist = async () => {
+    try {
+      const watchlists = await axios.get(`/api/watchlist/?id=${auth?.id}`, {
+        headers: { "Content-Type": "application/json" },
+      });
+      setWatchlists([...watchlists.data]);
+
+      // navigate("/");
+    } catch (err) {}
+  };
+
+  const fetchProfileData = async () => {
+    try {
+      const profileData = await axios.get(`/api/user/${auth?.id}`, {
+        headers: { "Content-Type": "application/json" },
+      });
+      setProfileData({ ...profileData.data });
+
+      // navigate("/");
+    } catch (err) {}
+  };
+  useEffect(() => {
+    if (auth?.username) {
+      fetchWatchlist();
+      fetchProfileData();
+    }
+  }, [auth]);
+  const handleWatchlist = async () => {
+    try {
+      setLoading(true);
+
+      const response = await axios.post(
+        "/api/watchlist",
+        JSON.stringify({ name: watchlistName }),
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      fetchWatchlist();
+      setSuccess(true);
+      setLoading(false);
+    } catch (err) {
+      if (!err?.response) {
+        setErrorMessage("No Server Response");
+      } else if (err.response?.status === 400) {
+        setErrorMessage("Watchlist Name Is Missing.");
+      } else {
+        setErrorMessage("Creation Failed");
+      }
+      setLoading(false);
+    }
+  };
   return (
     <div style={{ color: "white", padding: "5em 37.8em" }}>
       <Grid container wrap="nowrap" spacing={8}>
         <Grid item>
           <Avatar
             alt="Remy Sharp"
-            src={
-              "https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=Arsalen+Bidani"
-            }
+            src={`https://ui-avatars.com/api/?name=${profileData?.username}&background=fff&color=000`}
             sx={{ width: 125, height: 125 }}
           />
         </Grid>
@@ -61,9 +116,10 @@ function Profile() {
                     textAlign: "left",
                     fontWeight: 700,
                     fontSize: "1.05em",
+                    textTransform: "capitalize",
                   }}
                 >
-                  {"Arsalen Bidani"}
+                  {profileData?.username}
                 </span>
               </div>
               <div>
@@ -109,7 +165,7 @@ function Profile() {
                     }}
                   >
                     {" "}
-                    {65}
+                    {profileData?.followers}
                   </span>
                 </div>
                 <div>
@@ -134,7 +190,7 @@ function Profile() {
                       fontSize: "1.em",
                     }}
                   >
-                    {5}
+                    {profileData?.following}
                   </span>
                 </div>
                 <div>
@@ -159,7 +215,7 @@ function Profile() {
                       fontSize: "1.em",
                     }}
                   >
-                    {5}
+                    {watchlists.length}
                   </span>
                 </div>
               </Stack>
@@ -252,9 +308,10 @@ function Profile() {
                 marginBottom: "1em",
                 textAlign: "left",
                 fontWeight: 500,
+                textTransform: "capitalize",
               }}
             >
-              {"ArsalenBi"}
+              {profileData?.username}
             </span>
           )}
         </div>
@@ -519,139 +576,62 @@ function Profile() {
       >
         Watchlists
       </Header>
-      <Paper
-        style={{
-          textAlign: "left",
-          marginTop: "2em",
-          paddingBottom: "0.5em",
-        }}
-        className="watchlistList"
-      >
-        <Grid container wrap="nowrap" spacing={2}>
-          <Grid justifyContent="left" item xs zeroMinWidth>
-            <div style={{ fontSize: "1.14em" }}>
-              <Box m={3} style={{ margin: "unset", marginTop: "0.5em" }}>
-                <Stack direction="row" justifyContent="space-between">
-                  <div>
-                    <span
-                      style={{
-                        textAlign: "left",
-                        fontWeight: 600,
-                        fontSize: "1.03em",
-                      }}
-                    >
-                      Top 20 Comedy
-                    </span>
+      {watchlists?.map((x) => {
+        return (
+          <div key={x?.id}>
+            <Paper
+              style={{
+                textAlign: "left",
+                marginTop: "2em",
+                paddingBottom: "0.5em",
+              }}
+              className="watchlistList"
+            >
+              <Grid container wrap="nowrap" spacing={2}>
+                <Grid justifyContent="left" item xs zeroMinWidth>
+                  <div style={{ fontSize: "1.14em" }}>
+                    <Box m={3} style={{ margin: "unset", marginTop: "0.5em" }}>
+                      <Stack direction="row" justifyContent="space-between">
+                        <div>
+                          <span
+                            style={{
+                              textAlign: "left",
+                              fontWeight: 600,
+                              fontSize: "1.03em",
+                            }}
+                          >
+                            {x?.name}
+                          </span>
+                        </div>
+                        <div>
+                          {" "}
+                          <Button
+                            color="teal"
+                            icon
+                            labelPosition="right"
+                            size="medium"
+                            onClick={() => {
+                              navigate(`/watchlist/${x?.id}`);
+                            }}
+                          >
+                            <Icon name="angle double right" />
+                            Details
+                          </Button>
+                        </div>
+                      </Stack>
+                    </Box>
                   </div>
-                  <div>
-                    {" "}
-                    <Button
-                      color="teal"
-                      icon
-                      labelPosition="right"
-                      size="medium"
-                    >
-                      <Icon name="angle double right" />
-                      Details
-                    </Button>
-                  </div>
-                </Stack>
-              </Box>
-            </div>
-          </Grid>
-        </Grid>
-      </Paper>
-      <Divider className="watchlistDivider" variant="fullWidth" />
-      <Paper
-        style={{
-          textAlign: "left",
-          marginTop: "2em",
-          paddingBottom: "0.5em",
-        }}
-        className="watchlistList"
-      >
-        <Grid container wrap="nowrap" spacing={2}>
-          <Grid justifyContent="left" item xs zeroMinWidth>
-            <div style={{ fontSize: "1.14em" }}>
-              <Box m={3} style={{ margin: "unset", marginTop: "0.5em" }}>
-                <Stack direction="row" justifyContent="space-between">
-                  <div>
-                    <span
-                      style={{
-                        textAlign: "left",
-                        fontWeight: 600,
-                        fontSize: "1.03em",
-                      }}
-                    >
-                      Best Sci_Fi of 2021
-                    </span>
-                  </div>
-                  <div>
-                    {" "}
-                    <Button
-                      color="teal"
-                      icon
-                      labelPosition="right"
-                      size="medium"
-                    >
-                      <Icon name="angle double right" />
-                      Details
-                    </Button>
-                  </div>
-                </Stack>
-              </Box>
-            </div>
-          </Grid>
-        </Grid>
-      </Paper>
-      <Divider className="watchlistDivider" variant="fullWidth" />
-      <Paper
-        style={{
-          textAlign: "left",
-          marginTop: "2em",
-          paddingBottom: "0.5em",
-        }}
-        className="watchlistList"
-      >
-        <Grid container wrap="nowrap" spacing={2}>
-          <Grid justifyContent="left" item xs zeroMinWidth>
-            <div style={{ fontSize: "1.14em" }}>
-              <Box m={3} style={{ margin: "unset", marginTop: "0.5em" }}>
-                <Stack direction="row" justifyContent="space-between">
-                  <div>
-                    <span
-                      style={{
-                        textAlign: "left",
-                        fontWeight: 600,
-                        fontSize: "1.03em",
-                      }}
-                    >
-                      Most favourite "Western" movies{" "}
-                    </span>
-                  </div>
-                  <div>
-                    {" "}
-                    <Button
-                      color="teal"
-                      icon
-                      labelPosition="right"
-                      size="medium"
-                    >
-                      <Icon name="angle double right" />
-                      Details
-                    </Button>
-                  </div>
-                </Stack>
-              </Box>
-            </div>
-          </Grid>
-        </Grid>
-      </Paper>
-      <Divider
-        style={{ marginBottom: "1em" }}
-        className="watchlistDivider"
-        variant="fullWidth"
-      />
+                </Grid>
+              </Grid>
+            </Paper>
+            <Divider
+              style={{ marginBottom: "2em" }}
+              className="watchlistDivider"
+              variant="fullWidth"
+            />
+          </div>
+        );
+      })}
 
       <Modal
         onClose={() => setOpen(false)}
@@ -672,19 +652,50 @@ function Profile() {
       >
         <Modal.Header>Create New Watchlist</Modal.Header>
         <Modal.Content>
+          {errorMessage && !success && (
+            <Message
+              error
+              header="There was some errors with your submission"
+              content={errorMessage}
+            />
+          )}
+          {success && (
+            <Message
+              success
+              header="Watchlist Created"
+              content="Watchlist Is Ready To Get Populated"
+            />
+          )}
           <Header>Watchlist's Name </Header>
-          <Input label="Name" placeholder="Watchlist name" />
+          <Input
+            onChange={(e) => {
+              setWatchlistName(e.target.value);
+            }}
+            label="Name"
+            placeholder="Watchlist name"
+          />
         </Modal.Content>
         <Modal.Actions>
-          <Button color="black" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
           <Button
-            primary
-            content="Create"
-            onClick={() => setOpen(false)}
-            positive
-          />
+            color="black"
+            onClick={() => {
+              setOpen(false);
+              setWatchlistName("");
+              setSuccess(false);
+              setErrorMessage("");
+            }}
+          >
+            Close
+          </Button>
+          {!success && (
+            <Button
+              primary
+              content="Create"
+              onClick={handleWatchlist}
+              loading={loading}
+              positive
+            />
+          )}
         </Modal.Actions>
       </Modal>
 

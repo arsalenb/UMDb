@@ -1,5 +1,4 @@
 import React from "react";
-
 import { Routes, Route } from "react-router-dom";
 import About from "./About";
 import Analytics from "./Analytics";
@@ -31,16 +30,16 @@ const App = () => {
           <Route path="/Search" element={<Search />} />
           <Route path="/Login" element={<Login />} />
           <Route path="/Signup" element={<Signup />} />
-          <Route path="/Movie/:id" element={<Movie />} />
+          <Route path="/Movie/" element={<Movie />} />
           <Route path="/Watchlist/:id" element={<Watchlist />} />
           <Route path="/Followed/Watchlists" element={<FollowedWatchlists />} />
           <Route path="/Followed/Users" element={<FollowedUsers />} />
           <Route path="/Search/Movie" element={<SearchMovie />} />
-          <Route path="/Search/User" element={<SearchUser />} />
+          <Route path="/Search/User/" element={<SearchUser />} />
           <Route path="/Movie/Suggested" element={<SuggestedMovies />} />
 
           <Route path="/Profile" element={<Profile />} />
-          <Route path="/User" element={<User />} />
+          <Route path="/User/:id" element={<User />} />
         </Routes>
       ) : (
         <Routes>

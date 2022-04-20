@@ -10,13 +10,30 @@ import {
 } from "semantic-ui-react";
 import "./search.css";
 import { DateInput } from "semantic-ui-calendar-react-yz";
+import useAuth from "./hooks/useAuth";
+import { useParams, useNavigate } from "react-router-dom";
 
 function Search() {
+  const [minFollowers, setMinFollowers] = useState();
+  const [maxFollowers, setMaxFollowers] = useState();
+  const [userSearchString, setUserSearchString] = useState("");
+
+  const { auth } = useAuth();
+  const navigate = useNavigate();
+
   const options = [
     { key: "Comedy", text: "Comdey", value: "Comdey" },
     { key: "Horror", text: "Horror", value: "Horror" },
     { key: "Thriller", text: "Thriller", value: "Thriller" },
   ];
+  const handleUserSearch = () => {
+    if (!minFollowers || !maxFollowers)
+      navigate(`/Search/User?string=${userSearchString}`);
+    else
+      navigate(
+        `/Search/User?string=${userSearchString}&min=${minFollowers}&max=${maxFollowers}`
+      );
+  };
 
   return (
     <div className="v-wrap">
@@ -190,9 +207,15 @@ function Search() {
             <Input
               centered
               style={{ marginLeft: "-3em" }}
-              action="Search"
+              action={{
+                content: "Search",
+                onClick: handleUserSearch,
+              }}
               placeholder="Search Users ..."
               size="large"
+              onChange={(e) => {
+                setUserSearchString(e.target.value);
+              }}
             />
             <Divider />
             <Header style={{ marginLeft: "8em" }} as="h3">
@@ -218,6 +241,9 @@ function Search() {
                 icon="user circle outline"
                 iconPosition="left"
                 placeholder="From"
+                onChange={(e, { value }) => {
+                  setMinFollowers(value);
+                }}
               />
               {"  -  "}
               <Input
@@ -225,6 +251,9 @@ function Search() {
                 icon="user circle outline"
                 iconPosition="left"
                 placeholder="To"
+                onChange={(e, { value }) => {
+                  setMaxFollowers(value);
+                }}
               />
             </div>
           </Grid.Column>
