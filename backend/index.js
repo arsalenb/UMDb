@@ -8,6 +8,7 @@ const dotenv = require("dotenv").config();
 const app = express();
 
 app.use(express.json());
+
 // HTTP request logger middleware
 app.use(morgan("dev"));
 // Enable Cross-Origin Resource Sharing
@@ -29,5 +30,6 @@ app.use("/signup", require("./routes/signup"));
 app.use("/api/watchlist", require("./routes/api/watchlist"));
 app.use("/api/user", require("./routes/api/user"));
 app.use("/api/movie", require("./routes/api/movie"));
+app.use("/api/review", require("./routes/api/review"));
 
 app.listen(5000, () => console.log("Backend is listening on port 5000"));
