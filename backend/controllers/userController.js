@@ -49,10 +49,8 @@ const userById = async (req, res) => {
 const createUserMongo = async (req, res) => {
   const {username, email, password, gender, name, surname, country, dob} = req.body;
   if (!username || !email || !password || !gender || !name || !surname || !country || !dob)
-    console.log("hiii")
     return res.status(400).json({ message: "User Info Missing." });
   try{
-    console.log("inside the try")
     var db = await mongoDriver.mongo();
     let usr = await db.collection("users").findOne(
         {$or: [
@@ -60,9 +58,9 @@ const createUserMongo = async (req, res) => {
             {email: email}
           ]});
     if (usr === null){
-      let tot = await db.collection("users").count() + Math.floor(Math.random() * 100) + Math.floor(Math.random() * 100)
+      let tot = await db.collection("users").aggregate([{$sort:{_id:-1}}]).limit(1).toArray()
       var newUser = new User({
-        _id: parseInt(tot),
+        _id: tot[0]._id +1,
         username: username,
         email: email,
         password: password,
@@ -72,7 +70,7 @@ const createUserMongo = async (req, res) => {
         country: country,
         dob: dob
       })
-      await db.collection("users").insertOne(newUser);
+      // await db.collection("users").insertOne(newUser);
       console.log(newUser)
     }else {
       throw Error("UserID or Email already exists");

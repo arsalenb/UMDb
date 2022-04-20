@@ -135,35 +135,40 @@ async function updateMovieRatingDeleting (movie, oldRating, delRating) {
 
 const createReview = async (req, res) => {
     const {userId, username, movieId, title, rating, review_summary, review_detail} = req.body;
-    if (userId==null || username==null || movieId==null || title==null || rating==null || review_summary==null || review_detail==null)
-        return res.status(400).json({ message: "Review Info Missing." });
-    try{
-        let db = await mongoDriver.mongo();
-        let tot = await db.collection("reviews").count() + 15704481 + Math.floor(Math.random() * 10000) + Math.floor(Math.random() * 10000);
-        let newReview = new Review({
-            _id: "rw" + tot,
-            userId: userId,
-            reviewer: username,
-            movieId: movieId,
-            rating: rating,
-            title: title,
-            review_summary: review_summary,
-            review_detail: review_detail,
-        })
-        let movie = await db.collection("movies").findOne({_id: movieId})
-        if ((movie['reviews']).length >= 20){
-            movie['reviews'].push(newReview)
-            movie['reviews'].shift()
-        } else{
-            movie['reviews'].push(newReview)
+    // if (req.user.userId == userId) {
+        if (userId == null || username == null || movieId == null || title == null || rating == null || review_summary == null || review_detail == null)
+            return res.status(400).json({message: "Review Info Missing."});
+        try {
+            let db = await mongoDriver.mongo();
+            let tot = await db.collection("reviews").count() + 15704481 + Math.floor(Math.random() * 10000) + Math.floor(Math.random() * 10000);
+            let newReview = new Review({
+                _id: "rw" + tot,
+                userId: userId,
+                reviewer: username,
+                movieId: movieId,
+                rating: rating,
+                title: title,
+                review_summary: review_summary,
+                review_detail: review_detail,
+            })
+            let movie = await db.collection("movies").findOne({_id: movieId})
+            if ((movie['reviews']).length >= 20) {
+                movie['reviews'].push(newReview)
+                movie['reviews'].shift()
+            } else {
+                movie['reviews'].push(newReview)
+            }
+            await db.collection("movies").replaceOne({_id: movieId}, movie)
+            await db.collection("reviews").insertOne(newReview)
+            await updateMovieRatingCreation(movie, newReview["rating"])
+            res.status(200).json({review: newReview, message: "Review Added successfully"});
+        } catch (err) {
+            res.status(400).json({message: err.message});
         }
-        await db.collection("movies").replaceOne({_id: movieId}, movie)
-        await db.collection("reviews").insertOne(newReview)
-        await updateMovieRatingCreation(movie, newReview["rating"])
-        res.status(200).json({ review: newReview, message: "Review Added successfully" });
-    } catch (err) {
-        res.status(400).json({ message: err.message });
-    }
+    // }else{
+    //     res.status(400).json({ message: "ACCESS DENIED" });
+    // }
+
 };
 
 // @desc    Edit a review document in the MongoDb "reviews" collection
