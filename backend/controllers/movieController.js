@@ -9,9 +9,9 @@ let neo4jdbconnection = neo4j.driver(
   )
 );
 
-// @desc    Create Movie Node
-// @route   POST /api/movie
-// @access  Admin
+// @desc    Find movie by movieId
+// @route   GET /api/movie/:id
+// @access  Public
 
 const findMovie = async (req, res) => {
   const movieId = req.params.id;
@@ -28,6 +28,10 @@ const findMovie = async (req, res) => {
   }
 };
 
+// @desc    Find movie by title
+// @route   POST /api/movie/fbt
+// @access  Public
+
 const findMovieByTitle = async (req, res) => {
   const movieTitle = req.body.title;
   if (!movieTitle)
@@ -42,6 +46,10 @@ const findMovieByTitle = async (req, res) => {
   }
 };
 
+// @desc    Find movie by genre
+// @route   POST /api/movie/fbg
+// @access  Public
+
 const findMovieByGenre = async (req, res) => {
   const genre = req.body.genre;
   if (!genre)
@@ -55,6 +63,10 @@ const findMovieByGenre = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+// @desc    Find movie by runtime range
+// @route   POST /api/movie/fbr
+// @access  Public
 
 const findMovieByRuntime = async (req, res) => {
   const {startRuntime, endRuntime } = req.body;
@@ -71,6 +83,10 @@ const findMovieByRuntime = async (req, res) => {
   }
 };
 
+// @desc    Find movie by release date range
+// @route   POST /api/movie/fbd
+// @access  Public
+
 const findMovieByRelDate = async (req, res) => {
   const {startDate, endDate } = req.body;
   if (!startDate || !endDate)
@@ -85,6 +101,10 @@ const findMovieByRelDate = async (req, res) => {
   }
 };
 
+// @desc    Find movie by language
+// @route   POST /api/movie/fbl
+// @access  Public
+
 const findMovieByLang = async (req, res) => {
   const lang = req.body.lang;
   if (!lang)
@@ -98,6 +118,10 @@ const findMovieByLang = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+// @desc    Create movie document on MongoDB "Movies" Collection
+// @route   POST /api/movie/crtmongo
+// @access  Admin
 
 const createMovieMongo = async (req, res) => {
   const {budget, cast, genres, _id, overview, popularity, poster_path, release_date, revenue, runtime, spoken_languages, title, vote_average, vote_count} = req.body;
@@ -128,6 +152,10 @@ const createMovieMongo = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+// @desc    Create Movie Node
+// @route   POST /api/movie
+// @access  Admin
 
 const createMovie = async (req, res) => {
   const {movieId, overview, posterPath, title, voteAverage } = req.body;
@@ -184,6 +212,10 @@ const deleteMovie = async (req, res) => {
   }
 };
 
+// @desc    Delete movie document from MongoDB "Movies" Collection
+// @route   DELETE /api/movie/dltmongo
+// @access  Admin
+
 const deleteMovieMongo = async (req, res) => {
   const movieId = req.params.id;
   if (!movieId)
@@ -197,6 +229,10 @@ const deleteMovieMongo = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+// @desc    Get movies based on "popularity"
+// @route   GET /api/movie/pop/:p
+// @access  User
 
 const getPopMovies = async (req, res) => {
   const page = req.params.p;
@@ -215,6 +251,10 @@ const getPopMovies = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+// @desc    Get movies based on "popularity" and genre of choice
+// @route   POST /api/movie/popg
+// @access  User
 
 const getPopMoviesByGenre = async (req, res) => {
   const {page, genre} = req.body;
@@ -235,6 +275,10 @@ const getPopMoviesByGenre = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+// @desc    Get movies based on "average_vote" and year of choice
+// @route   POST /api/movie/topy
+// @access  User
 
 const getTopMoviesByYear = async (req, res) => {
   const {page, year} = req.body;
@@ -257,6 +301,10 @@ const getTopMoviesByYear = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+// @desc    Get movies based on "average_vote" and year+genre of choice
+// @route   POST /api/movie/topyg
+// @access  User
 
 const getTopMoviesByYearAndGenre = async (req, res) => {
   const {page, year, genre} = req.body;
@@ -284,6 +332,10 @@ const getTopMoviesByYearAndGenre = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+// @desc    Get most popular genres per year
+// @route   GET /api/movie/popg/y
+// @access  User
 
 const getPopGenresPerYear = async (req, res) => {
   try {
