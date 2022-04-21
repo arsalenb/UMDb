@@ -1,28 +1,26 @@
 const express = require("express");
 const router = express.Router();
 const userController = require("../../controllers/userController");
+const verifyJWT = require("../../middlewares/verifyToken");
+
+// Find the most active users based on the number of followers of their watchlists
+router.route("/mostactive").get(verifyJWT, userController.mostActiveUsers);
 
 // Followed and Suggested Watchlists
-router.route("/followed").get(userController.followedUsers);
-router.route("/suggested").get(userController.suggestedUsers);
+router.route("/followed").get(verifyJWT, userController.followedUsers);
+router.route("/suggested").get(verifyJWT, userController.suggestedUsers);
 
-// ---------------------User Create ------------------
-router.route("/").post(userController.createUser);
-router.route("/crtmongo").post(userController.createUserMongo);
-
-// ---------------------User Search ------------------
+// ---------------------User CRUD ------------------
 router.route("/:id").get(userController.userById);
-
-// ---------------------User Update ------------------
-router.route("/upd").put(userController.updateUserMongo);
-
-// ---------------------User Delete ------------------
-router.route("/:id").delete(userController.deleteUser);
-router.route("/dltmongo/:id").delete(userController.deleteUserMongo);
+// get user infos from mongo
+router.route("/").post(userController.createUser);
+router.route("/:id").put(verifyJWT, userController.updateUserMongo);
+router.route("/:id").delete(verifyJWT, userController.deleteUser);
+router.route("/dltmongo/:id").delete(verifyJWT, userController.deleteUserMongo);
 // ------------------------------------------------------
 
 // User Follow or Unfollow User
-router.route("/:id/follow").post(userController.followUser);
-router.route("/:id/follow").delete(userController.unfollowUser);
+router.route("/:id/follow").post(verifyJWT, userController.followUser);
+router.route("/:id/follow").delete(verifyJWT, userController.unfollowUser);
 
 module.exports = router;
