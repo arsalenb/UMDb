@@ -10,6 +10,21 @@ let neo4jdbconnection = neo4j.driver(
   )
 );
 
+const userByIdMongo = async (req, res) => {
+  const userId = req.params.id;
+  if (!userId)
+    return res.status(400).json({ message: "User ID Missing." });
+  try {
+    // Connect to the MongoDB cluster
+    let db = await mongoDriver.mongo();
+    const user = await db.collection("users").findOne({_id: parseInt(userId)});
+    res.status(200).json({ user: user, message: "Task executed successfully" });
+  } catch (err) {
+
+    res.status(400).json({ message: err.message });
+  }
+};
+
 // @desc    Get User Details By Id
 // @route   GET /api/user/:id
 // @access  Public
@@ -44,60 +59,28 @@ const userById = async (req, res) => {
 };
 
 // @desc    Create User Node
-// @route   POST /api/user
-// @access  Public
+// @route   NONE: Called internally
 
-const createUser = async (req, res) => {
-  const { username } = req.body;
-  if (!username)
-    return res.status(400).json({ message: "Username Not Provided." });
+const createUser = async (username, id) => {
+  if (!username || id==null)
+    throw new Error("Username or ID Not Provided.")
 
   try {
     let session = neo4jdbconnection.session();
     const createUser = await session.run(
-      `match(u:User)
-            with u ORDER BY u.user_id DESC LIMIT 1
-            create(ux:User {user_id:u.user_id+1,username:"${username}"})
+      `create(ux:User {user_id:"${id}",username:"${username}"})
             return {user_id:ux.user_id,username:ux.username}`
     );
     session.close();
     if (!createUser.records[0])
-      return res.status(400).json({ message: `User Creation Failed.` });
-    const result = createUser.records[0]["_fields"][0];
-    res.status(201).json({
-      ...result,
-      user_id: result["user_id"].low,
-    });
+       throw new Error("User Creation Failed.");
+    return result = createUser.records[0]["_fields"][0];
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.log(err)
+    throw err
   }
 };
 
-// @desc    Delete User Node
-// @route   DELETE /api/user/:id
-// @access  Owner and Admin
-
-const deleteUser = async (req, res) => {
-  const userId = req.params.id;
-  const id = req.claims.id;
-  if (!req.params.id)
-    return res.status(400).json({ message: "Invalid user Id" });
-  try {
-    let session = neo4jdbconnection.session();
-    const deleteUser = await session.run(
-      ` match(u:User{user_id:${userId}}) 
-      optional match(u)-[:CREATE]->(w:Watchlist)
-      detach delete u,w`
-    );
-    session.close();
-    if (deleteUser.summary.counters["_stats"].nodesDeleted === 0)
-      return res.status(400).json({ message: `User Deletion Failed.` });
-
-    res.status(204).json({ success: "true" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
 // @desc    Follow User
 // @route   POST /api/user/:id/follow
 // @access  Registred User
@@ -216,8 +199,7 @@ const suggestedUsers = async (req, res) => {
 // @access  User
 
 const updateUserMongo = async (req, res) => {
-  // id = req.claims.id;
-  const updatedUserId = req.params.id;
+  const userId = req.claims.id;
   const {
     new_email,
     new_password,
@@ -234,8 +216,8 @@ const updateUserMongo = async (req, res) => {
     !new_name ||
     !new_surname ||
     !new_country ||
-    !new_dob ||
-    !updatedUserId
+    !new_dob
+    // !updatedUserId
   )
     return res.status(400).json({ message: "User Update Info Missing." });
   try {
@@ -243,19 +225,21 @@ const updateUserMongo = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(new_password, salt);
     let newProfileInfo = {
-      email: new_email,
-      password: hashedPassword,
-      gender: new_gender,
-      name: new_name,
-      surname: new_surname,
-      country: new_country,
-      dob: new Date(new_dob),
+
     };
 
     let db = await mongoDriver.mongo();
     await db
       .collection("users")
-      .updateOne({ _id: parseInt(updatedUserId) }, { $set: newProfileInfo });
+      .updateOne({ _id: parseInt(userId) }, { $set: {
+          email: new_email,
+          password: hashedPassword,
+          gender: new_gender,
+          name: new_name,
+          surname: new_surname,
+          country: new_country,
+          dob: new Date(new_dob),
+      }});
     res
       .status(201)
       .json({ user: newProfileInfo, message: "User Updated successfully" });
@@ -273,9 +257,36 @@ const deleteUserMongo = async (req, res) => {
   try {
     let db = await mongoDriver.mongo();
     await db.collection("users").deleteOne({ _id: parseInt(userId) });
+    await deleteUser(userId)
+    // await db.collection("users").deleteOne({ username: userId });
     res.status(204).json({ message: "Task executed successfully" });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+};
+
+
+// @desc    Delete User Node
+// @route   NONE: Called internally
+
+const deleteUser = async (userId) => {
+
+  console.log(userId)
+  if (userId==null)
+    throw new Error( "Invalid user Id" );
+  try {
+    let session = neo4jdbconnection.session();
+    const deleteUser = await session.run(
+        ` match(u:User{user_id:"${userId}"})
+      optional match(u)-[:CREATE]->(w:Watchlist)
+      detach delete u,w`
+    );
+    session.close();
+    if (deleteUser.summary.counters["_stats"].nodesDeleted === 0)
+      throw new Error(`User Deletion Failed.`);
+
+  } catch (err) {
+    throw err;
   }
 };
 
@@ -318,6 +329,7 @@ const mostActiveUsers = async (req, res) => {
 };
 
 module.exports = {
+  userByIdMongo,
   userById,
   createUser,
   deleteUser,

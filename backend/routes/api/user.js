@@ -12,11 +12,12 @@ router.route("/suggested").get(verifyJWT, userController.suggestedUsers);
 
 // ---------------------User CRUD ------------------
 router.route("/:id").get(userController.userById);
+router.route("/mongo/:id").get(userController.userByIdMongo);
 // get user infos from mongo
-router.route("/").post(userController.createUser);
+// router.route("/").post(userController.createUser);
 router.route("/:id").put(verifyJWT, userController.updateUserMongo);
-router.route("/:id").delete(verifyJWT, userController.deleteUser);
-router.route("/dltmongo/:id").delete(verifyJWT, userController.deleteUserMongo);
+// router.route("/:id").delete(userController.deleteUser);
+router.route("/mongo/:id").delete(userController.deleteUserMongo);
 // ------------------------------------------------------
 
 // User Follow or Unfollow User

@@ -10,15 +10,13 @@ router.route("/topy").get(movieController.getTopMoviesByYear);
 router.route("/topyg").get(movieController.getTopMoviesByYearAndGenre);
 router.route("/popg/y").get(movieController.getPopGenresPerYear);
 
+
 // View suggested movies based on their occurrence on the watchlists of users you follow (>=2)
 router.route("/suggested").get(verifyJWT, movieController.suggestedMovies);
+
 // ---------------------Movie CRUD------------------
-router.route("/").post(verifyJWT, movieController.createMovie);
-router.route("/crtmongo").post(verifyJWT, movieController.createMovieMongo);
+router.route("/").post(verifyJWT, movieController.createMovieMongo);
 router.route("/:id").get(movieController.findMovie);
-router.route("/:id").delete(verifyJWT, movieController.deleteMovie);
-router
-  .route("/dltmongo/:id")
-  .delete(verifyJWT, movieController.deleteMovieMongo);
+router.route("/mongo/:id").delete(verifyJWT, movieController.deleteMovieMongo);
 
 module.exports = router;
