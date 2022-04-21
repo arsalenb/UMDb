@@ -1,6 +1,7 @@
 let neo4j = require("neo4j-driver");
-const mongoDriver = require("../Mongo");
+const mongoDriver = require("../mongo");
 const User = require("../models/user");
+const bcrypt = require("bcrypt");
 let neo4jdbconnection = neo4j.driver(
   process.env.MOVIE_DATABASE_URL,
   neo4j.auth.basic(
@@ -42,45 +43,6 @@ const userById = async (req, res) => {
   }
 };
 
-// @desc    Create User document in MongoDB "users" collection
-// @route   POST /api/user/crtmongo
-// @access  Public
-
-const createUserMongo = async (req, res) => {
-  const {username, email, password, gender, name, surname, country, dob} = req.body;
-  if (!username || !email || !password || !gender || !name || !surname || !country || !dob)
-    return res.status(400).json({ message: "User Info Missing." });
-  try{
-    var db = await mongoDriver.mongo();
-    let usr = await db.collection("users").findOne(
-        {$or: [
-            {username: username},
-            {email: email}
-          ]});
-    if (usr === null){
-      let tot = await db.collection("users").count() + Math.floor(Math.random() * 100) + Math.floor(Math.random() * 100)
-      var newUser = new User({
-        _id: parseInt(tot),
-        username: username,
-        email: email,
-        password: password,
-        gender: gender,
-        name: name,
-        surname: surname,
-        country: country,
-        dob: dob
-      })
-      await db.collection("users").insertOne(newUser);
-    }else {
-      throw Error("UserID or Email already exists");
-    }
-    res.status(200).json({ user: newUser, message: "User Created successfully" });
-  }catch (err) {
-
-    res.status(400).json({ message: err.message });
-  }
-};
-
 // @desc    Create User Node
 // @route   POST /api/user
 // @access  Public
@@ -107,53 +69,7 @@ const createUser = async (req, res) => {
       user_id: result["user_id"].low,
     });
   } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-};
-
-// @desc    Update User document in MongoDB "users" collection
-// @route   PUT /api/user/upd
-// @access  User
-
-const updateUserMongo = async (req, res) => {
-  const {username, new_email, new_password, new_gender, new_name, new_surname, new_country, new_dob} = req.body;
-  if (!username || !new_email || !new_password || !new_gender || !new_name || !new_surname || !new_country || !new_dob)
-    return res.status(400).json({ message: "User Update Info Missing." });
-  try{
-    let newProfileInfo = {
-      email: new_email,
-      password: new_password,
-      gender: new_gender,
-      name: new_name,
-      surname: new_surname,
-      country: new_country,
-      dob: new_dob
-    }
-    let db = await mongoDriver.mongo();
-    await db.collection("users").updateOne({username: username}, {$set: newProfileInfo});
-    res.status(200).json({ user: newProfileInfo, message: "User Updated successfully" });
-  }catch (err) {
-
-    res.status(400).json({ message: err.message });
-  }
-};
-
-
-// @desc    Delete User document from MongoDB "users" collection
-// @route   DELETE /api/user/dltmongo/:id
-// @access  User/Admin
-
-const deleteUserMongo = async (req, res) => {
-  const username = req.params.id;
-  if (!username)
-    return res.status(400).json({ message: "Username Missing." });
-  try{
-    let db = await mongoDriver.mongo();
-    await db.collection("users").deleteOne({username: username});
-    res.status(200).json({message: "Task executed successfully" });
-  } catch (err) {
-
-    res.status(400).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -163,6 +79,7 @@ const deleteUserMongo = async (req, res) => {
 
 const deleteUser = async (req, res) => {
   const userId = req.params.id;
+  const id = req.claims.id;
   if (!req.params.id)
     return res.status(400).json({ message: "Invalid user Id" });
   try {
@@ -178,7 +95,7 @@ const deleteUser = async (req, res) => {
 
     res.status(204).json({ success: "true" });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 // @desc    Follow User
@@ -187,7 +104,7 @@ const deleteUser = async (req, res) => {
 
 const followUser = async (req, res) => {
   const followedUserId = req.params.id;
-  const userId = 102;
+  const userId = req.claims.id;
   if (!req.params.id)
     return res.status(400).json({ message: "Invalid User Id" });
   try {
@@ -215,7 +132,7 @@ const followUser = async (req, res) => {
 
 const unfollowUser = async (req, res) => {
   const followedUserId = req.params.id;
-  const userId = 102;
+  const userId = req.claims.id;
   if (!req.params.id)
     return res.status(400).json({ message: "Invalid User Id" });
   try {
@@ -241,7 +158,7 @@ const unfollowUser = async (req, res) => {
 // @access  Registred User
 
 const followedUsers = async (req, res) => {
-  const userId = 5;
+  const userId = req.claims.id;
   try {
     let session = neo4jdbconnection.session();
     const followedUsers = await session.run(
@@ -270,7 +187,8 @@ const followedUsers = async (req, res) => {
 // @access  Registred User
 
 const suggestedUsers = async (req, res) => {
-  const userId = 5;
+  const userId = req.claims.id;
+
   try {
     let session = neo4jdbconnection.session();
     const suggestedUsers = await session.run(
@@ -292,6 +210,113 @@ const suggestedUsers = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// @desc    Update User document in MongoDB "users" collection
+// @route   PUT /api/user/upd
+// @access  User
+
+const updateUserMongo = async (req, res) => {
+  // id = req.claims.id;
+  const updatedUserId = req.params.id;
+  const {
+    new_email,
+    new_password,
+    new_gender,
+    new_name,
+    new_surname,
+    new_country,
+    new_dob,
+  } = req.body;
+  if (
+    !new_email ||
+    !new_password ||
+    !new_gender ||
+    !new_name ||
+    !new_surname ||
+    !new_country ||
+    !new_dob ||
+    !updatedUserId
+  )
+    return res.status(400).json({ message: "User Update Info Missing." });
+  try {
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(new_password, salt);
+    let newProfileInfo = {
+      email: new_email,
+      password: hashedPassword,
+      gender: new_gender,
+      name: new_name,
+      surname: new_surname,
+      country: new_country,
+      dob: new Date(new_dob),
+    };
+
+    let db = await mongoDriver.mongo();
+    await db
+      .collection("users")
+      .updateOne({ _id: parseInt(updatedUserId) }, { $set: newProfileInfo });
+    res
+      .status(201)
+      .json({ user: newProfileInfo, message: "User Updated successfully" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+// @desc    Delete User document from MongoDB "users" collection
+// @route   DELETE /api/user/dltmongo/:id
+// @access  User/Admin
+
+const deleteUserMongo = async (req, res) => {
+  const userId = req.params.id;
+  if (!userId) return res.status(400).json({ message: "UserId is Missing." });
+  try {
+    let db = await mongoDriver.mongo();
+    await db.collection("users").deleteOne({ _id: parseInt(userId) });
+    res.status(204).json({ message: "Task executed successfully" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// @desc    Most Active Users
+// @route   GET /api/user/mostactive
+// @access  Public
+
+const mostActiveUsers = async (req, res) => {
+  try {
+    const session = neo4jdbconnection.session();
+    const mostActive = await session.run(
+      `
+        MATCH(u1:User)-[f1]->(w:Watchlist)<-[f2]-(u2:User)
+        with *
+        WHERE
+        type (f1) in["CREATE"] AND
+        type (f2) in ["FOLLOW"] AND
+        NOT (u1)-[:FOLLOW]-(w) AND
+        NOT (u2)-[:CREATE]-(w)
+        with  count(f2) as numFollowers,u1
+        RETURN {username:u1.username,user_id:u1.user_id,numFollowers:numFollowers}
+        ORDER BY  numFollowers
+        DESC
+        LIMIT 10 `
+    );
+    session.close();
+    if (!mostActive.records)
+      return res.status(400).json({ message: `An Error Occured` });
+    const result = mostActive.records.map((e) => {
+      return {
+        ...e["_fields"][0],
+        user_id: e["_fields"][0].user_id.low,
+        numFollowers: e["_fields"][0].numFollowers.low,
+      };
+    });
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
 module.exports = {
   userById,
   createUser,
@@ -300,7 +325,7 @@ module.exports = {
   unfollowUser,
   followedUsers,
   suggestedUsers,
-  createUserMongo,
   updateUserMongo,
-  deleteUserMongo
+  deleteUserMongo,
+  mostActiveUsers,
 };

@@ -26,7 +26,7 @@ const watchlistById = async (req, res) => {
     optional Match(m:Movie)-[:BELONGS]->(w)
     optional Match(u:User)-[f:FOLLOW]->(w)
     return {
-        movies:Case when m is not null then collect({
+        movies:Case when m is not null then collect(distinct {
             title:m.title,
             movie_id:m.movie_id,
             poster_path:m.poster_path,
@@ -102,7 +102,7 @@ const watchlistsByUserId = async (req, res) => {
 
 const createWatchlist = async (req, res) => {
   const { name } = req.body;
-  const id = 102;
+  const id = req.claims.id;
 
   if (!name)
     return res.status(400).json({ message: "Watchlist Name Not Provided." });
@@ -125,7 +125,7 @@ const createWatchlist = async (req, res) => {
 
     res.status(201).json({
       ...result,
-      user_id: result["user_id"].low,
+      owner_id: result["owner_id"].low,
       id: result["id"].low,
       created_date: result["created_date"],
     });
@@ -141,8 +141,7 @@ const createWatchlist = async (req, res) => {
 const updateWatchlist = async (req, res) => {
   const { name } = req.body;
   const watchlistId = req.params.id;
-  const id = 5;
-
+  const id = req.claims.id;
   if (!name)
     return res.status(400).json({ message: "Watchlist Name is missing." });
 
@@ -165,7 +164,7 @@ const updateWatchlist = async (req, res) => {
     res.status(201).json({
       ...result,
       id: result["id"].low,
-      created_date: `${result["created_date"].year.low}-${result["created_date"].month.low}-${result["created_date"].day.low}`,
+      created_date: result.created_date,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -178,8 +177,8 @@ const updateWatchlist = async (req, res) => {
 
 const deleteWatchlist = async (req, res) => {
   const watchlistId = req.params.id;
-  const isAdmin = false;
-  const user_id = 5;
+  const isAdmin = req.claims.roles.includes("Admin");
+  const user_id = req.claims.id;
   if (!req.params.id)
     return res.status(400).json({ message: "Invalid Watchlist Id" });
   try {
@@ -232,8 +231,8 @@ const addMovie = async (req, res) => {
   }
 };
 
-// @desc    Delete a movie from watchlist
-// @route   DELETE /api/watchlist/add
+// @desc    Remove a movie from watchlist
+// @route   Post /api/watchlist/remove
 // @access  Owner of watchlist
 
 const deleteMovie = async (req, res) => {
@@ -267,7 +266,7 @@ const deleteMovie = async (req, res) => {
 
 const followWatchlist = async (req, res) => {
   const watchlistId = req.params.id;
-  const userId = 102;
+  const userId = req.claims.id;
   if (!req.params.id)
     return res.status(400).json({ message: "Invalid Watchlist Id" });
   try {
@@ -296,7 +295,7 @@ const followWatchlist = async (req, res) => {
 
 const unfollowWatchlist = async (req, res) => {
   const watchlistId = req.params.id;
-  const userId = 5;
+  const userId = req.claims.id;
   if (!req.params.id)
     return res.status(400).json({ message: "Invalid Watchlist Id" });
   try {
@@ -324,7 +323,7 @@ const unfollowWatchlist = async (req, res) => {
 // @access  Registred User
 
 const followedWatchlists = async (req, res) => {
-  const userId = 5;
+  const userId = req.claims.id;
   try {
     let session = neo4jdbconnection.session();
     const followedWatchlists = await session.run(
@@ -357,7 +356,7 @@ const followedWatchlists = async (req, res) => {
 // @access  Registred User
 
 const suggestedWatchlists = async (req, res) => {
-  const userId = 77;
+  const userId = req.claims.id;
   try {
     let session = neo4jdbconnection.session();
     const suggestedWatchlists = await session.run(`
@@ -383,6 +382,36 @@ const suggestedWatchlists = async (req, res) => {
   }
 };
 
+// @desc    Most Followed Watchlists
+// @route   GET /api/watchlist/mostfollowed
+// @access  Public
+
+const mostFollowedWatchlists = async (req, res) => {
+  try {
+    const session = neo4jdbconnection.session();
+    const mostFollowed = await session.run(
+      `MATCH(u1:User)-[f1:FOLLOW]->(w:Watchlist)
+        with count(w) as numFollowers,w
+        RETURN {name:w.name,id:ID(w),numFollowers:numFollowers}
+        ORDER BY  numFollowers
+        DESC
+        LIMIT 10`
+    );
+    session.close();
+    if (!mostFollowed.records)
+      return res.status(400).json({ message: `An Error Occured` });
+    const result = mostFollowed.records.map((e) => {
+      return {
+        ...e["_fields"][0],
+        numFollowers: e["_fields"][0].numFollowers.low,
+        id: e["_fields"][0].id.low,
+      };
+    });
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 module.exports = {
   watchlistById,
   watchlistsByUserId,
@@ -395,4 +424,5 @@ module.exports = {
   unfollowWatchlist,
   followedWatchlists,
   suggestedWatchlists,
+  mostFollowedWatchlists,
 };
