@@ -12,8 +12,10 @@ import "./style.css";
 
 function Movie() {
   const { auth } = useAuth();
-  const params = useParams();
+  const { id } = useParams();
   const [watchlists, setWatchlists] = useState([]);
+  const [movie, setMovie] = useState([]);
+
 
   const fetchWatchlist = async () => {
     try {
@@ -35,6 +37,24 @@ function Movie() {
       console.log(watchlists);
     }
   }, [auth]);
+
+
+  const fetchMovie = async () => {
+    try {
+      const response = await axios.get(`/api/movie/${id}`, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      // obj = await response.data.movie
+      // console.log(obj)
+      // setMovie({movie:response.data.movie});
+    }catch (e) {
+      console.log(e)
+    }
+  };
+  useEffect(() => {
+    fetchMovie();
+  }, []);
   const handleAddMovie = async (e, { value }) => {
     try {
       const response = await axios.post(
@@ -104,7 +124,6 @@ function Movie() {
             <Box m={3} style={{ marginLeft: 0 }}>
               <Stack direction="row" justifyContent="space-between">
                 <span>{"Heat (2011)"}</span>
-
                 <div>
                   {auth?.username && (
                     <Dropdown
@@ -202,8 +221,8 @@ function Movie() {
           </div>
         </div>
       </div>
-      <MovieCredit id={949} />
-      <Reviews />
+      {/*<MovieCredit id={949} />*/}
+      <Reviews title={movieData.title} userId={0} username={"ahim"}/>
 
       {/* {genres.map((index) => {
         return (
