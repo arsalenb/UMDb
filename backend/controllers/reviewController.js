@@ -1,6 +1,13 @@
 const mongoDriver = require("../Mongo");
 const Review = require("../models/review");
-const PORT = require("../../backend/index.js");
+const neo4j = require("neo4j-driver");
+let neo4jdbconnection = neo4j.driver(
+    process.env.MOVIE_DATABASE_URL,
+    neo4j.auth.basic(
+        process.env.MOVIE_DATABASE_USERNAME,
+        process.env.MOVIE_DATABASE_PASSWORD
+    )
+);
 
 // @desc    Method to retrieve a SINGLE review embedded in a "Movie" document
 // @route   NONE: called internally
@@ -91,10 +98,23 @@ const getMoreReviewsOfMovie = async (req, res) => {
   }
 };
 
+const updateVoteMovieNode = async (movieId, new_avg_vote) => {
+  try{
+    let session = neo4jdbconnection.session();
+    const update_vote = await session.run(
+        `MATCH (m:Movie {movie_id: "${movieId}"})
+        SET m.vote_average = "${new_avg_vote}"`
+    );
+    console.log(update_vote)
+  }catch (err){
+    throw new Error ('Neo4j: Updating Vote Average Failed.')
+  }
+};
+
 // @desc    Method to update the "average_vote" and "vote_count" of movie after CREATING a review
 // @route   NONE: called internally
 
-async function updateMovieRatingCreation(movie, rating) {
+const updateMovieRatingCreation = async (movie, rating) => {
   try {
     let newAvgRating =
       (movie["vote_average"] * movie["vote_count"] + rating) /
@@ -105,9 +125,10 @@ async function updateMovieRatingCreation(movie, rating) {
       vote_count: newNumVotes,
     };
     let db = await mongoDriver.mongo();
-    return (upd_movie = await db
+    await db
       .collection("movies")
-      .updateOne({ _id: movie["_id"] }, { $set: update }));
+      .updateOne({ _id: movie["_id"] }, { $set: update });
+    await updateVoteMovieNode(movie["_id"], newAvgRating.toFixed(1))
   } catch (e) {
     throw e;
   }
@@ -116,7 +137,7 @@ async function updateMovieRatingCreation(movie, rating) {
 // @desc    Method to update the "average_vote" and "vote_count" of movie after EDITING a review
 // @route   NONE: called internally
 
-async function updateMovieRatingEditing(movie, oldRating, newRating) {
+const updateMovieRatingEditing = async (movie, oldRating, newRating)=> {
   try {
     let db = await mongoDriver.mongo();
     let newAvgRating =
@@ -128,6 +149,7 @@ async function updateMovieRatingEditing(movie, oldRating, newRating) {
     await db
       .collection("movies")
       .updateOne({ _id: movie["_id"] }, { $set: updateNew });
+    await updateVoteMovieNode(movie["_id"], newAvgRating.toFixed(1))
   } catch (e) {
     throw e;
   }
@@ -136,7 +158,7 @@ async function updateMovieRatingEditing(movie, oldRating, newRating) {
 // @desc    Method to update the "average_vote" and "vote_count" of movie after DELETING a review
 // @route   NONE: called internally
 
-async function updateMovieRatingDeleting(movie, oldRating, delRating) {
+const updateMovieRatingDeleting = async (movie, oldRating, delRating)=>{
   try {
     let db = await mongoDriver.mongo();
     let newAvgRating =
@@ -152,6 +174,7 @@ async function updateMovieRatingDeleting(movie, oldRating, delRating) {
     await db
       .collection("movies")
       .updateOne({ _id: movie["_id"] }, { $set: update });
+    await updateVoteMovieNode(movie["_id"], newAvgRating.toFixed(1))
   } catch (e) {
     throw e;
   }
@@ -164,7 +187,8 @@ async function updateMovieRatingDeleting(movie, oldRating, delRating) {
 const createReview = async (req, res) => {
   const userId = req.claims.id;
   const username = req.claims.username;
-  if (!movieId || !title || !rating || !review_summary || !review_detail)
+  const {movieId, title, rating, review_summary, review_detail} = req.body
+  if (movieId==null|| title==null || rating==null || review_summary==null || review_detail==null)
     return res.status(400).json({ message: "Review Info Missing." });
   try {
     let db = await mongoDriver.mongo();
@@ -215,28 +239,28 @@ const editReview = async (req, res) => {
     new_review_detail,
   } = req.body;
   if (
-    !review_id ||
-    !userId ||
-    !movieId ||
-    !new_rating ||
-    !new_review_summary ||
-    !new_review_detail
+    review_id==null||
+    userId==null||
+    movieId==null ||
+    new_rating==null ||
+    new_review_summary==null ||
+    new_review_detail==null
   )
     return res.status(400).json({ message: "Review Edit Info Missing." });
   try {
     let db = await mongoDriver.mongo();
-    let editedReview = new Review({
-      rating: new_rating,
-      review_summary: new_review_summary,
-      review_detail: new_review_detail,
-    });
 
     let movie = await db.collection("movies").findOne({ _id: movieId });
     let oldRating = movie["vote_average"];
 
     let status = await db
       .collection("reviews")
-      .updateOne({ _id: review_id }, editedReview);
+      .updateOne({ _id: review_id }, {$set: {
+          rating: new_rating,
+          review_summary: new_review_summary,
+          review_detail: new_review_detail,
+          review_date: new Date (Date.now())
+      }});
 
     if (status["modifiedCount"] === 0) {
       throw Error("Review Not Found!");
@@ -267,7 +291,7 @@ const deleteReview = async (req, res) => {
   const review_id = req.query.review_id;
   const movieId = req.query.movieId;
   console.log(review_id, movieId);
-  if (!review_id || !movieId)
+  if (review_id==null || movieId==null)
     return res.status(400).json({ message: "Review Info Missing." });
 
   try {
@@ -293,6 +317,15 @@ const deleteReview = async (req, res) => {
     throw e;
   }
 };
+
+const deleteAllMovieReviews = async (movieId) => {
+  try{
+    let db = await mongoDriver.mongo();
+    await db.collection("reviews").deleteMany({movieId: movieId})
+  }catch (err){
+    throw err
+  }
+}
 
 // @desc    Get the total reviews posted per year
 // @route   GET /api/review/totalrev/year
@@ -376,4 +409,5 @@ module.exports = {
   getMoreReviewsOfMovie,
   totalReviewsPerYear,
   ratingsPerMovie,
+  deleteAllMovieReviews
 };
