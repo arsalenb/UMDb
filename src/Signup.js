@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "./api/axios";
 import {
@@ -35,7 +35,7 @@ const Signup = () => {
     password: "",
   });
   const { username, name, surname, email, password } = formData;
-
+console.log(formData)
   // const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -83,6 +83,20 @@ const Signup = () => {
       setLoading(false);
     }
   };
+
+  const writeData = async () => {
+
+    try {
+      await axios.post(`/api/user/crtmongo`, {
+        username, email, password, gender, name, surname, country, date
+      });
+    }catch (e) {
+      console.log(e)
+    }
+  };
+  useEffect(() => {
+    writeData()
+  }, []);
 
   return (
     <Grid textAlign="center" style={{ height: "100vh" }} verticalAlign="middle">
