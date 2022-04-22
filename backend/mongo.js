@@ -7,9 +7,9 @@ async function mongo() {
     const uri = "mongodb://localhost:27017/";
     client = new MongoClient(uri);
     await client.connect();
-    db = client.db("umdb");
+    db = client.db("umdbMovies");
     return db;
-  } else return client.db("umdb");
+  } else return client.db("umdbMovies");
 }
 
 function close() {
