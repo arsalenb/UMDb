@@ -18,5 +18,7 @@ router.route("/suggested").get(verifyJWT, movieController.suggestedMovies);
 router.route("/").post(verifyJWT, movieController.createMovieMongo);
 router.route("/:id").get(movieController.findMovie);
 router.route("/mongo/:id").delete(verifyJWT, movieController.deleteMovieMongo);
+// router.route("/mongo/:id").delete( movieController.deleteMovieMongo);
+// router.route("/").post(movieController.createMovieMongo);
 
 module.exports = router;

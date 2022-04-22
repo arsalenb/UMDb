@@ -58,29 +58,6 @@ const userById = async (req, res) => {
   }
 };
 
-// @desc    Create User Node
-// @route   NONE: Called internally
-
-const createUser = async (username, id) => {
-  if (!username || id==null)
-    throw new Error("Username or ID Not Provided.")
-
-  try {
-    let session = neo4jdbconnection.session();
-    const createUser = await session.run(
-      `create(ux:User {user_id:"${id}",username:"${username}"})
-            return {user_id:ux.user_id,username:ux.username}`
-    );
-    session.close();
-    if (!createUser.records[0])
-       throw new Error("User Creation Failed.");
-    return result = createUser.records[0]["_fields"][0];
-  } catch (err) {
-    console.log(err)
-    throw err
-  }
-};
-
 // @desc    Follow User
 // @route   POST /api/user/:id/follow
 // @access  Registred User
@@ -93,7 +70,7 @@ const followUser = async (req, res) => {
   try {
     let session = neo4jdbconnection.session();
     const followUser = await session.run(
-      `  match(u:User{user_id:${userId}})
+        `  match(u:User{user_id:${userId}})
         match(ux:User{user_id:${followedUserId}})
         where u.user_id<>ux.user_id and NOT (u)-[:FOLLOW]-(ux)
         create (u)-[r:FOLLOW]->(ux)
@@ -121,7 +98,7 @@ const unfollowUser = async (req, res) => {
   try {
     let session = neo4jdbconnection.session();
     const unfollowUser = await session.run(
-      `   match(u:User{user_id:${userId}})-[f:FOLLOW]->(ux:User{user_id:${followedUserId}})
+        `   match(u:User{user_id:${userId}})-[f:FOLLOW]->(ux:User{user_id:${followedUserId}})
             where u.user_id<>ux.user_id
             delete f    
             return 'relationship deleted'
@@ -145,7 +122,7 @@ const followedUsers = async (req, res) => {
   try {
     let session = neo4jdbconnection.session();
     const followedUsers = await session.run(
-      `match(u:User)-[:FOLLOW]->(ux:User)
+        `match(u:User)-[:FOLLOW]->(ux:User)
     where u.user_id=${userId}
     return {user_name:ux.username,user_id:ux.user_id}`
     );
@@ -175,7 +152,7 @@ const suggestedUsers = async (req, res) => {
   try {
     let session = neo4jdbconnection.session();
     const suggestedUsers = await session.run(
-      `MATCH (u1:User{user_id:${userId}})-[f1:FOLLOW]->(wl:Watchlist)<-[f2:FOLLOW]-(ux:User)
+        `MATCH (u1:User{user_id:${userId}})-[f1:FOLLOW]->(wl:Watchlist)<-[f2:FOLLOW]-(ux:User)
     where  NOT (u1)-[:FOLLOW]->(ux)
     return {user_name:ux.username,user_id:ux.user_id} LIMIT 7`
     );
@@ -191,6 +168,29 @@ const suggestedUsers = async (req, res) => {
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc    Create User Node
+// @route   NONE: Called internally
+
+const createUser = async (username, id) => {
+  if (!username || id==null)
+    throw new Error("Username or ID Not Provided.")
+
+  try {
+    let session = neo4jdbconnection.session();
+    const createUser = await session.run(
+      `create(ux:User {user_id:"${id}",username:"${username}"})
+            return {user_id:ux.user_id,username:ux.username}`
+    );
+    session.close();
+    if (!createUser.records[0])
+       throw new Error("User Creation Failed.");
+    return result = createUser.records[0]["_fields"][0];
+  } catch (err) {
+    console.log(err)
+    throw err
   }
 };
 
@@ -217,21 +217,15 @@ const updateUserMongo = async (req, res) => {
     !new_surname ||
     !new_country ||
     !new_dob
-    // !updatedUserId
   )
     return res.status(400).json({ message: "User Update Info Missing." });
   try {
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(new_password, salt);
-    let newProfileInfo = {
-
-    };
-
     let db = await mongoDriver.mongo();
-    await db
-      .collection("users")
-      .updateOne({ _id: parseInt(userId) }, { $set: {
+    const status = await db
+      .collection("users").updateOne({ _id: parseInt(userId) }, { $set: {
           email: new_email,
           password: hashedPassword,
           gender: new_gender,
@@ -240,31 +234,69 @@ const updateUserMongo = async (req, res) => {
           country: new_country,
           dob: new Date(new_dob),
       }});
+    if (status["modifiedCount"] === 0) {
+      return res.status(400).json({ message: "User Not Found."});
+    }
     res
       .status(201)
-      .json({ user: newProfileInfo, message: "User Updated successfully" });
+      .json({ message: "User Updated successfully" });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+
   }
 };
+
+// @desc    Backtrack Insertion if an exception was caught in the Neo4j user deletion
+// @route   NONE: called internally
+
+const backtrackInsert = async (user) => {
+  try {
+    let db = await mongoDriver.mongo();
+    await db.collection("users").insertOne(user);
+  } catch (err) {
+    throw err
+  }
+};
+
+// @desc    Backtrack Deletion if an exception was caught in the Neo4j user insertion
+// @route   NONE: called internally
+
+const backtrackDelete = async (userId) => {
+  try {
+    let db = await mongoDriver.mongo();
+    await db.collection("users").deleteOne({ _id: parseInt(userId) });
+  } catch (err) {
+    throw err
+  }
+};
+
 // @desc    Delete User document from MongoDB "users" collection
 // @route   DELETE /api/user/dltmongo/:id
 // @access  User/Admin
 
 const deleteUserMongo = async (req, res) => {
   const userId = req.params.id;
+  var user_to_be_deleted = {}
+
   if (!userId) return res.status(400).json({ message: "UserId is Missing." });
+
   try {
     let db = await mongoDriver.mongo();
-    await db.collection("users").deleteOne({ _id: parseInt(userId) });
+    user_to_be_deleted = await db.collection("users").findOne({ _id: parseInt(userId)});
+
+    try {
+      await db.collection("users").deleteOne({_id: parseInt(userId)});
+    }catch(err){
+      return res.status(400).json({ message: "Mongo: User Deletion Failed" });
+    }
     await deleteUser(userId)
     // await db.collection("users").deleteOne({ username: userId });
     res.status(204).json({ message: "Task executed successfully" });
+
   } catch (err) {
+    await backtrackInsert(user_to_be_deleted)
     res.status(400).json({ message: err.message });
   }
 };
-
 
 // @desc    Delete User Node
 // @route   NONE: Called internally
@@ -340,4 +372,5 @@ module.exports = {
   updateUserMongo,
   deleteUserMongo,
   mostActiveUsers,
+  backtrackDelete,
 };

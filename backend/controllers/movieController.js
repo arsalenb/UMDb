@@ -29,6 +29,30 @@ const findMovie = async (req, res) => {
   }
 };
 
+// @desc    Backtrack Insertion if an exception was caught in the Neo4j movie deletion
+// @route   NONE: called internally
+
+const backtrackInsert = async (movie) => {
+  try {
+    let db = await mongoDriver.mongo();
+    await db.collection("movies").insertOne(movie);
+  } catch (err) {
+    throw err
+  }
+};
+
+// @desc    Backtrack Deletion if an exception was caught in the Neo4j movie insertion
+// @route   NONE: called internally
+
+const backtrackDelete = async (movieId) => {
+  try {
+    let db = await mongoDriver.mongo();
+    await db.collection("movie").deleteOne({ _id: parseInt(movieId) });
+  } catch (err) {
+    throw err
+  }
+};
+
 // @desc    Create movie document on MongoDB "Movies" Collection
 // @route   POST /api/movie/crtmongo
 // @access  Admin
@@ -82,13 +106,18 @@ const createMovieMongo = async (req, res) => {
       spoken_languages: spoken_languages,
       title: title,
     });
-    await db.collection("movies").insertOne(newMovie);
-    const movieNode = await createMovie(req.body._id, req.body.overview, req.body.poster_path, req.body.title, req.body.vote_average)
+    try{
+      await db.collection("movies").insertOne(newMovie);
+    }catch{
+      return res.status(400).json({ message: "Mongo: Movie Insertion Failed." });
+    }
+    const movieNode = await createMovie( req.body._id, req.body.overview, req.body.poster_path, req.body.title, req.body.vote_average)
     movieNode.vote_average = movieNode.vote_average.low
     res
       .status(200)
       .json({ movie_Document: newMovie, movie_Node: movieNode, message: "Mongo: Movie added successfully" });
   } catch (err) {
+    await backtrackDelete(_id)
     res.status(400).json({ message: err.message });
   }
 };
@@ -156,14 +185,21 @@ const deleteMovieMongo = async (req, res) => {
   if (!req.claims.roles.includes("Admin"))
     return res.status(401).json({ message: "Unauthorized" });
   const movieId = req.params.id;
+  var movie_to_be_deleted = {}
   if (!movieId) return res.status(400).json({ message: "Movie ID Missing." });
   try {
     let db = await mongoDriver.mongo();
-    await db.collection("movies").deleteOne({ _id: movieId });
+    movie_to_be_deleted = await db.collection("movies").findOne({ _id: movieId});
+    try{
+      await db.collection("movies").deleteOne({_id: movieId});
+    }catch(err){
+      return res.status(400).json({ message: "Mongo: Movie Deletion Failed" });
+    }
     await deleteMovie(movieId)
     await reviewController.deleteAllMovieReviews(movieId)
     res.status(200).json({ message: "Task executed successfully" });
   } catch (err) {
+    await backtrackInsert(movie_to_be_deleted)
     res.status(400).json({ message: err.message });
   }
 };
@@ -326,6 +362,8 @@ const getTopMoviesByYearAndGenre = async (req, res) => {
 const getPopGenresPerYear = async (req, res) => {
   try {
     let db = await mongoDriver.mongo();
+    var genre_per_year_array = []
+    var genre_per_year = {}
     const movies = await db
       .collection("movies")
       .aggregate([
@@ -367,12 +405,21 @@ const getPopGenresPerYear = async (req, res) => {
             data: { $push: "$$ROOT" },
           },
         },
-        { $sort: { "data.average_popularity": -1 } },
+        { $sort: { "data._id": -1 } },
       ])
       .toArray();
-    res
-      .status(200)
-      .json({ movies: movies, message: "Task executed successfully" });
+
+    movies.forEach((x)=>{
+      for (const genre in x.data){
+        if (x.data[genre].average_popularity=== x.most_popular_genre){
+          genre_per_year = {"Year": x._id, "Most_Popular_Genre": x.data[genre]._id.genre}
+          genre_per_year_array.push(genre_per_year)
+        }
+      }
+    })
+
+    res.status(200)
+      .json({ Result: genre_per_year_array, message: "Task executed successfully" });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
