@@ -121,9 +121,10 @@ const updateMovieRatingCreation = async (movie, rating) => {
       (movie["vote_count"] + 1);
     let newNumVotes = movie["vote_count"] + 1;
     let update = {
-      vote_average: newAvgRating.toFixed(1),
+      vote_average: + newAvgRating.toFixed(1),
       vote_count: newNumVotes,
     };
+    console.log(update)
     let db = await mongoDriver.mongo();
     await db
       .collection("movies")
@@ -140,12 +141,10 @@ const updateMovieRatingCreation = async (movie, rating) => {
 const updateMovieRatingEditing = async (movie, oldRating, newRating)=> {
   try {
     let db = await mongoDriver.mongo();
+    console.log(movie["vote_average"], movie["vote_count"], oldRating, newRating)
     let newAvgRating =
-      (movie["vote_average"] * movie["vote_count"] -
-        parseInt(oldRating) +
-        parseInt(newRating)) /
-      movie["vote_count"];
-    let updateNew = { vote_average: newAvgRating.toFixed(1) };
+      (((movie["vote_average"] * movie["vote_count"]) - parseInt(oldRating)) + parseInt(newRating)) / movie["vote_count"];
+    let updateNew = { vote_average: +newAvgRating.toFixed(1) };
     await db
       .collection("movies")
       .updateOne({ _id: movie["_id"] }, { $set: updateNew });
@@ -168,7 +167,7 @@ const updateMovieRatingDeleting = async (movie, oldRating, delRating)=>{
       newAvgRating = 0;
     }
     let update = {
-      vote_average: newAvgRating.toFixed(1),
+      vote_average: +newAvgRating.toFixed(1),
       vote_count: newNumVotes,
     };
     await db
@@ -251,7 +250,8 @@ const editReview = async (req, res) => {
     let db = await mongoDriver.mongo();
 
     let movie = await db.collection("movies").findOne({ _id: movieId });
-    let oldRating = movie["vote_average"];
+    let review_to_edit = await db.collection("reviews").findOne({ _id: review_id });
+    let rating_to_edit = review_to_edit.rating
 
     let status = await db
       .collection("reviews")
@@ -275,7 +275,7 @@ const editReview = async (req, res) => {
       }
     }
 
-    await updateMovieRatingEditing(movie, oldRating, new_rating);
+    await updateMovieRatingEditing(movie, rating_to_edit, new_rating);
 
     res.status(201).json({ message: "Review Edited successfully" });
   } catch (err) {
@@ -290,7 +290,6 @@ const editReview = async (req, res) => {
 const deleteReview = async (req, res) => {
   const review_id = req.query.review_id;
   const movieId = req.query.movieId;
-  console.log(review_id, movieId);
   if (review_id==null || movieId==null)
     return res.status(400).json({ message: "Review Info Missing." });
 
@@ -299,8 +298,10 @@ const deleteReview = async (req, res) => {
     let review_to_delete = await db
       .collection("reviews")
       .findOne({ _id: review_id });
+
     let movie = await db.collection("movies").findOne({ _id: movieId });
     let oldVoteAverage = movie["vote_average"];
+
     if (review_to_delete != null) {
       await db.collection("reviews").deleteOne(review_to_delete);
       let x = await getReviewEmbedded(review_id, movieId);
