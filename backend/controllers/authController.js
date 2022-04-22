@@ -80,7 +80,7 @@ const handleSignup = async (req, res) => {
     });
 
     if (exists) {
-      res.status(409).json({ message: "User already exist." });
+      return res.status(409).json({ message: "User already exist." });
     } else {
       // Hash password
       const salt = await bcrypt.genSalt(10);
@@ -101,11 +101,16 @@ const handleSignup = async (req, res) => {
           country,
           dob,
         });
-        const user = await db.collection("users").insertOne(newUser);
+        try {
+          await db.collection("users").insertOne(newUser);
+        }catch(e){
+          return res.status(409).json({message: "User Document not Created"});
+        }
         const node = await userController.createUser(username, newId)
-        res.status(201).json({User_Document:user, User_Node: node});
+        return res.status(201).json({User_Document:newUser, User_Node: node});
       } catch (err) {
-        res.status(500).json({ message: err.message });
+        await userController.backtrackDelete(newId);
+        return res.status(500).json({ message: err.message });
       }
     }
   }

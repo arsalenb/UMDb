@@ -14,10 +14,9 @@ router.route("/suggested").get(verifyJWT, userController.suggestedUsers);
 router.route("/:id").get(userController.userById);
 router.route("/mongo/:id").get(userController.userByIdMongo);
 // get user infos from mongo
-// router.route("/").post(userController.createUser);
 router.route("/:id").put(verifyJWT, userController.updateUserMongo);
-// router.route("/:id").delete(userController.deleteUser);
 router.route("/mongo/:id").delete(userController.deleteUserMongo);
+// router.route("/:id").put( userController.updateUserMongo);
 // ------------------------------------------------------
 
 // User Follow or Unfollow User
