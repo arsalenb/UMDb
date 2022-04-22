@@ -9,6 +9,8 @@ router.route("/:id").get(reviewController.findReviewsOfMovie);
 router.route("/more/:id").get(reviewController.getMoreReviewsOfMovie);
 router.route("/").delete(reviewController.deleteReview);
 router.route("/").put(verifyJWT, reviewController.editReview);
+// router.route("/").put(reviewController.editReview);
+// router.route("/").post(reviewController.createReview);
 
 // ---------------------Review Aggregations ------------------
 router.route("/totalrev/year").get(reviewController.totalReviewsPerYear);
