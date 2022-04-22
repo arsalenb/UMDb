@@ -26,7 +26,7 @@ const movieSchema = new Schema({
     type: String,
   },
   release_date: {
-    type: String,
+    type: Date,
   },
   revenue: {
     type: Number,
