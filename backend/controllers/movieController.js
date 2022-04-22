@@ -1,6 +1,7 @@
 let neo4j = require("neo4j-driver");
 const mongoDriver = require("../mongo");
 const Movie = require("../models/movie");
+const reviewController = require("./reviewController")
 let neo4jdbconnection = neo4j.driver(
   process.env.MOVIE_DATABASE_URL,
   neo4j.auth.basic(
@@ -64,7 +65,7 @@ const createMovieMongo = async (req, res) => {
     spoken_languages == null ||
     title == null
   )
-    return res.status(400).json({ message: "Movie Info Missing." });
+    return res.status(400).json({ message: "Mongo: Movie Info Missing." });
   try {
     let db = await mongoDriver.mongo();
     let newMovie = new Movie({
@@ -82,9 +83,11 @@ const createMovieMongo = async (req, res) => {
       title: title,
     });
     await db.collection("movies").insertOne(newMovie);
+    const movieNode = await createMovie(req.body._id, req.body.overview, req.body.poster_path, req.body.title, req.body.vote_average)
+    movieNode.vote_average = movieNode.vote_average.low
     res
       .status(200)
-      .json({ movie: newMovie, message: "Movie added successfully" });
+      .json({ movie_Document: newMovie, movie_Node: movieNode, message: "Mongo: Movie added successfully" });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -93,12 +96,10 @@ const createMovieMongo = async (req, res) => {
 // @route   POST /api/movie
 // @access  Admin
 
-const createMovie = async (req, res) => {
-  if (!req.claims.roles.includes("Admin"))
-    return res.status(401).json({ message: "Unauthorized" });
-  const { movieId, overview, posterPath, title, voteAverage } = req.body;
-  if (!movieId || !overview || !posterPath || !title || !voteAverage)
-    return res.status(400).json({ message: "Some Fields Missing." });
+const createMovie = async (movieId, overview, posterPath, title, voteAverage) => {
+
+  if (movieId==null || overview==null || posterPath==null || title==null || voteAverage==null)
+    throw new Error ("Neo4j: Some Fields Missing.");
 
   try {
     let session = neo4jdbconnection.session();
@@ -115,14 +116,12 @@ const createMovie = async (req, res) => {
     );
     session.close();
     if (!createMovie.records[0])
-      return res.status(400).json({ message: `Movie Creation Failed.` });
-    const result = createMovie.records[0]["_fields"][0];
-    res.status(201).json({
-      ...result,
-      vote_average: result["vote_average"].low,
-    });
+      throw new Error(`Neo4j: Movie Creation Failed.`);
+
+    return result = createMovie.records[0]["_fields"][0];
+
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    throw err
   }
 };
 
@@ -130,12 +129,10 @@ const createMovie = async (req, res) => {
 // @route   DELETE /api/movie/:id
 // @access  Admin
 
-const deleteMovie = async (req, res) => {
-  if (!req.claims.roles.includes("Admin"))
-    return res.status(401).json({ message: "Unauthorized" });
-  const movieId = req.params.id;
-  if (!req.params.id)
-    return res.status(400).json({ message: "Invalid Movie Id" });
+const deleteMovie = async (movieId) => {
+
+  if (movieId==null)
+    throw new Error("Invalid Movie Id" );
   try {
     let session = neo4jdbconnection.session();
     const deleteMovie = await session.run(
@@ -144,11 +141,10 @@ const deleteMovie = async (req, res) => {
     );
     session.close();
     if (deleteMovie.summary.counters["_stats"].nodesDeleted === 0)
-      return res.status(400).json({ message: `Movie Deletion Failed.` });
+      throw new Error(`Movie Deletion Failed.`);
 
-    res.status(204).json({ success: "true" });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    throw err
   }
 };
 
@@ -164,6 +160,8 @@ const deleteMovieMongo = async (req, res) => {
   try {
     let db = await mongoDriver.mongo();
     await db.collection("movies").deleteOne({ _id: movieId });
+    await deleteMovie(movieId)
+    await reviewController.deleteAllMovieReviews(movieId)
     res.status(200).json({ message: "Task executed successfully" });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -184,15 +182,13 @@ const getPopMovies = async (req, res) => {
       .collection("movies")
       .aggregate([
         { $sort: { popularity: -1 } },
-        {
-          $project: {
+        {$project: {
             title: 1,
             poster_path: 1,
             overview: 1,
             vote_average: 1,
             release_date: 1,
-          },
-        },
+        }},
       ])
       .skip(skipped)
       .limit(28)
@@ -221,7 +217,13 @@ const getPopMoviesByGenre = async (req, res) => {
       .aggregate([
         { $match: { genres: { $regex: genre, $options: "i" } } },
         { $sort: { popularity: -1 } },
-        { $project: { title: 1, poster_path: 1, popularity: 1, genres: 1 } },
+        {$project: {
+            title: 1,
+            poster_path: 1,
+            overview: 1,
+            vote_average: 1,
+            release_date: 1,
+        }},
       ])
       .skip(skipped)
       .limit(30)
@@ -233,6 +235,8 @@ const getPopMoviesByGenre = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+
 
 // @desc    Get movies based on "average_vote" and year of choice
 // @route   GET /api/movie/topy
@@ -252,14 +256,13 @@ const getTopMoviesByYear = async (req, res) => {
       .aggregate([
         { $match: { release_date: { $gte: reqYear, $lt: yearLimit } } },
         { $sort: { vote_average: -1 } },
-        {
-          $project: {
+        {$project: {
             title: 1,
             poster_path: 1,
+            overview: 1,
             vote_average: 1,
             release_date: 1,
-          },
-        },
+        }},
       ])
       .skip(skipped)
       .limit(30)
@@ -297,14 +300,13 @@ const getTopMoviesByYearAndGenre = async (req, res) => {
           },
         },
         { $sort: { vote_average: -1 } },
-        {
-          $project: {
+        {$project: {
             title: 1,
             poster_path: 1,
+            overview: 1,
             vote_average: 1,
             release_date: 1,
-          },
-        },
+        }},
       ])
       .skip(skipped)
       .limit(30)

@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const mongoDriver = require("../mongo");
 const User = require("../models/user.js");
+const userController = require("../controllers/userController");
 
 // @desc    Authenticate a user
 // @route   POST /login
@@ -85,11 +86,12 @@ const handleSignup = async (req, res) => {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
-      // Create user
-      const tot = (await db.collection("users").count()) + 1;
+      // Create user Mongo
+      const tot = await db.collection("users").aggregate([{$sort:{_id:-1}}]).limit(1).toArray()
+      const newId = tot[0]._id +1
       try {
         var newUser = new User({
-          _id: tot,
+          _id: newId,
           username,
           password: hashedPassword,
           email,
@@ -100,8 +102,8 @@ const handleSignup = async (req, res) => {
           dob,
         });
         const user = await db.collection("users").insertOne(newUser);
-
-        res.status(201).json(user);
+        const node = await userController.createUser(username, newId)
+        res.status(201).json({User_Document:user, User_Node: node});
       } catch (err) {
         res.status(500).json({ message: err.message });
       }

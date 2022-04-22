@@ -7,7 +7,7 @@ const verifyJWT = require("../../middlewares/verifyToken");
 router.route("/").post(verifyJWT, reviewController.createReview);
 router.route("/:id").get(reviewController.findReviewsOfMovie);
 router.route("/more/:id").get(reviewController.getMoreReviewsOfMovie);
-router.route("/").delete(verifyJWT, reviewController.deleteReview);
+router.route("/").delete(reviewController.deleteReview);
 router.route("/").put(verifyJWT, reviewController.editReview);
 
 // ---------------------Review Aggregations ------------------
