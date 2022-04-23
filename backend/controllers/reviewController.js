@@ -1,5 +1,4 @@
 const mongoDriver = require("../mongo");
-const Review = require("../models/review");
 const neo4j = require("neo4j-driver");
 let neo4jdbconnection = neo4j.driver(
   process.env.MOVIE_DATABASE_URL,
@@ -211,7 +210,8 @@ const createReview = async (req, res) => {
       15704481 +
       Math.floor(Math.random() * 10000) +
       Math.floor(Math.random() * 10000);
-    let newReview = new Review({
+
+    let newReview = {
       _id: "rw" + tot,
       userId: userId,
       reviewer: username,
@@ -220,7 +220,8 @@ const createReview = async (req, res) => {
       title: title,
       review_summary: review_summary,
       review_detail: review_detail,
-    });
+      review_date: new Date(Date.now()),
+    };
     let movie = await db.collection("movies").findOne({ _id: movieId });
     if (movie["reviews"].length >= 20) {
       movie["reviews"].push(newReview);

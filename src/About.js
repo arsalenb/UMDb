@@ -57,7 +57,7 @@ function About() {
                   color: "grey",
                 }}
               >
-                Arsalen Bidani, Aida Himmiche, Tesfaye Yimam Mohamed
+                Arsalen Bidani, Aida Himmiche, Tesfaye Yimam Mohamed,
               </span>
             </div>
           </div>

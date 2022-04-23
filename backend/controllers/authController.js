@@ -1,7 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const mongoDriver = require("../mongo");
-const User = require("../models/user.js");
 const userController = require("../controllers/userController");
 
 // @desc    Authenticate a user
@@ -95,17 +94,19 @@ const handleSignup = async (req, res) => {
         .toArray();
       const newId = tot[0]._id + 1;
       try {
-        var newUser = new User({
-          _id: newId,
-          username,
+        var newUser = {
+          _id: parseInt(newId),
+          username: username,
           password: hashedPassword,
-          email,
-          gender,
-          name,
-          surname,
-          country,
-          dob,
-        });
+          email: email,
+          gender: gender,
+          name: name,
+          surname: surname,
+          country: country,
+          dob: new Date(dob),
+          roles: ["User"],
+          joinDate: new Date(Date.now()),
+        };
         try {
           await db.collection("users").insertOne(newUser);
         } catch (e) {
