@@ -1,8 +1,0 @@
-.inside {
-  vertical-align: text-bottom;
-}
-.ui.action.input:not([class*="left action"]) > .button:last-child,
-.ui.action.input:not([class*="left action"]) > .buttons:last-child > .button,
-.ui.action.input:not([class*="left action"]) > .dropdown:last-child {
-  background-color: #e6b91e;
-}
