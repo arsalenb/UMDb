@@ -340,7 +340,7 @@ const Reviews = (props) => {
                               </Button>
                             )}
 
-                          {(owner || auth?.roles?.includes("Admin")) &&
+                          {(owner || auth?.roles.includes("Admin")) &&
                             edit.filter((o) => o.edit == i).length == 0 && (
                               <Button
                                 style={{
