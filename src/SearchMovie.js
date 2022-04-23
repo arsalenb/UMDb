@@ -13,6 +13,8 @@ import "./Catalog.css";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import useAuth from "./hooks/useAuth";
 import axios from "./api/axios";
+import CircularProgress from "@mui/material/CircularProgress";
+
 function SearchMovie() {
   const posterBaseUrl = "https://image.tmdb.org/t/p/w300";
   const { auth } = useAuth();
@@ -28,6 +30,7 @@ function SearchMovie() {
   const minDate = searchParams.get("minDate");
   const maxDate = searchParams.get("maxDate");
   const language = searchParams.get("language");
+  const [loading, setLoading] = useState(true);
 
   const [page, setPage] = useState(1);
 
@@ -44,40 +47,51 @@ function SearchMovie() {
         }
       );
       setSearchResults([...searchResults, ...Search.data.movies]);
-    } catch (err) {}
+      setLoading(false);
+    } catch (err) {
+      setLoading(false);
+    }
   };
 
   return (
-    <div style={{ padding: "2em" }}>
-      <Header inverted size={"huge"} style={{ fontSize: "2em" }}>
-        <Header.Content>Movie Search Results :</Header.Content>
-      </Header>
-      <div className="catalogContainer">
-        {searchResults.map((movie) => (
-          <div className="catalog__item" key={movie._id}>
-            <div className="catalog__item__img">
-              <img
-                src={`${posterBaseUrl}${movie.poster_path}`}
-                alt={movie.title}
-              />
-              <div className="catalog__item__resume">{movie.overview}</div>
-            </div>
-            <div className="catalog__item__footer">
-              <div
-                className="catalog__item__footer__name"
-                onClick={() => {
-                  navigate(`/movie/${movie._id}`);
-                }}
-              >
-                {movie.title}
+    <div>
+      {loading ? (
+        <div className="v-wrap">
+          <CircularProgress style={{ color: "white" }} className="v-box" />
+        </div>
+      ) : (
+        <div style={{ padding: "2em" }}>
+          <Header inverted size={"huge"} style={{ fontSize: "2em" }}>
+            <Header.Content>Movie Search Results :</Header.Content>
+          </Header>
+          <div className="catalogContainer">
+            {searchResults.map((movie) => (
+              <div className="catalog__item" key={movie._id}>
+                <div className="catalog__item__img">
+                  <img
+                    src={`${posterBaseUrl}${movie.poster_path}`}
+                    alt={movie.title}
+                  />
+                  <div className="catalog__item__resume">{movie.overview}</div>
+                </div>
+                <div className="catalog__item__footer">
+                  <div
+                    className="catalog__item__footer__name"
+                    onClick={() => {
+                      navigate(`/movie/${movie._id}`);
+                    }}
+                  >
+                    {movie.title}
+                  </div>
+                  <div className="catalog__item__footer__rating">
+                    {movie.vote_average}
+                  </div>
+                </div>
               </div>
-              <div className="catalog__item__footer__rating">
-                {movie.vote_average}
-              </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
