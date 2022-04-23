@@ -124,48 +124,51 @@ const Reviews = (props) => {
         />
       )}
       <div style={{ padding: 14 }} className="App">
-        <div style={{ width: "40em" }}>
-          <Form onSubmit={handleSubmit} reply style={{ marginBottom: 20 }}>
-            <Form.Field
-              control={Input}
-              placeholder="Title"
-              inverted
-              onChange={(e) => {
-                setReviewTitle(e.target.value);
-              }}
-              style={{ width: "40em" }}
-            />
-            <Form.TextArea
-              style={{ minHeight: 300, width: "40em" }}
-              placeholder={"Review description ..."}
-              onChange={(e) => {
-                setReviewSummary(e.target.value);
-              }}
-            />
-            <Box m={3} style={{ margin: "unset" }}>
-              <Stack direction="row" justifyContent="space-between">
-                <Button
-                  content="Add Reply"
-                  labelPosition="left"
-                  icon="edit"
-                  primary
-                  type="submit"
-                  loading={creationLoading}
-                />
-                <Rating
-                  style={{ marginTop: 5 }}
-                  size="large"
-                  name="half-rating"
-                  defaultValue={3}
-                  precision={0.5}
-                  onClick={(e) => {
-                    setReviewRating(parseInt(e.target.value) * 2);
-                  }}
-                />
-              </Stack>
-            </Box>
-          </Form>
-        </div>
+        {auth?.username && (
+          <div style={{ width: "40em" }}>
+            <Form onSubmit={handleSubmit} reply style={{ marginBottom: 20 }}>
+              <Form.Field
+                control={Input}
+                placeholder="Title"
+                inverted
+                onChange={(e) => {
+                  setReviewTitle(e.target.value);
+                }}
+                style={{ width: "40em" }}
+              />
+              <Form.TextArea
+                style={{ minHeight: 300, width: "40em" }}
+                placeholder={"Review description ..."}
+                onChange={(e) => {
+                  setReviewSummary(e.target.value);
+                }}
+              />
+              <Box m={3} style={{ margin: "unset" }}>
+                <Stack direction="row" justifyContent="space-between">
+                  <Button
+                    content="Add Reply"
+                    labelPosition="left"
+                    icon="edit"
+                    primary
+                    type="submit"
+                    loading={creationLoading}
+                  />
+                  <Rating
+                    style={{ marginTop: 5 }}
+                    size="large"
+                    name="half-rating"
+                    defaultValue={3}
+                    precision={0.5}
+                    onClick={(e) => {
+                      setReviewRating(parseInt(e.target.value) * 2);
+                    }}
+                  />
+                </Stack>
+              </Box>
+            </Form>
+          </div>
+        )}
+
         {props.reviews
           ?.map((item, i) => {
             const owner = parseInt(item.userId) == auth?.id;
