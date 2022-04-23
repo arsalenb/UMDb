@@ -1,6 +1,5 @@
 let neo4j = require("neo4j-driver");
 const mongoDriver = require("../mongo");
-const User = require("../models/user");
 const bcrypt = require("bcrypt");
 let neo4jdbconnection = neo4j.driver(
   process.env.MOVIE_DATABASE_URL,
@@ -73,7 +72,10 @@ const createUser = async (username, id) => {
     );
     session.close();
     if (!createUser.records[0]) throw new Error("User Creation Failed.");
-    return (result = createUser.records[0]["_fields"][0]);
+    return (result = {
+      ...createUser.records[0]["_fields"][0],
+      user_id: createUser.records[0]["_fields"][0]["user_id"].toNumber(),
+    });
   } catch (err) {
     console.log(err);
     throw err;

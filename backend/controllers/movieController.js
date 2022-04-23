@@ -1,6 +1,5 @@
 let neo4j = require("neo4j-driver");
 const mongoDriver = require("../mongo");
-const Movie = require("../models/movie");
 const reviewController = require("./reviewController");
 let neo4jdbconnection = neo4j.driver(
   process.env.MOVIE_DATABASE_URL,
@@ -101,7 +100,7 @@ const createMovieCombined = async (req, res) => {
     return res.status(400).json({ message: "Mongo: Movie Info Missing." });
   try {
     let db = await mongoDriver.mongo();
-    let newMovie = new Movie({
+    let newMovie = {
       budget: budget,
       cast: cast,
       genres: genres,
@@ -114,7 +113,10 @@ const createMovieCombined = async (req, res) => {
       runtime: runtime,
       spoken_languages: spoken_languages,
       title: title,
-    });
+      vote_average: vote_average,
+      vote_count: vote_count,
+      reviews: [],
+    };
     try {
       await db.collection("movies").insertOne(newMovie);
     } catch {
