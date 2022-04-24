@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Image,
-  Menu,
-  Modal,
-  Button,
-  Header,
-  Icon,
-  Pagination,
-  Dropdown,
-} from "semantic-ui-react";
+import { Header } from "semantic-ui-react";
 import "./Catalog.css";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import useAuth from "./hooks/useAuth";

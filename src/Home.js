@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Button, Header, Loader, Dimmer } from "semantic-ui-react";
+import { Button, Header } from "semantic-ui-react";
 import "./Catalog.css";
 import useAuth from "./hooks/useAuth";
 import axios from "./api/axios";
 import { useNavigate } from "react-router-dom";
 import CircularProgress from "@mui/material/CircularProgress";
-import Box from "@mui/material/Box";
 function Home() {
   const posterBaseUrl = "https://image.tmdb.org/t/p/w300";
   const { auth } = useAuth();

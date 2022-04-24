@@ -401,14 +401,7 @@ const getPopGenresPerYear = async (req, res) => {
         { $unwind: { path: "$genres" } },
         {
           $project: {
-            date: { $toDate: "$release_date" },
-            genres: 1,
-            popularity: 1,
-          },
-        },
-        {
-          $project: {
-            year: { $year: "$date" },
+            year: { $year: { $toDate: "$release_date" } },
             genres: 1,
             popularity: 1,
           },
@@ -416,15 +409,7 @@ const getPopGenresPerYear = async (req, res) => {
         {
           $group: {
             _id: { genre: "$genres", year: "$year" },
-            total_movies: { $sum: 1 },
-            total_popularity: { $sum: "$popularity" },
-          },
-        },
-        {
-          $project: {
-            average_popularity: {
-              $divide: ["$total_popularity", "$total_movies"],
-            },
+            average_popularity: { $avg: "$popularity" },
           },
         },
         {

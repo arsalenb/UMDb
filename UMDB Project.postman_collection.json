@@ -1,0 +1,1260 @@
+{
+	"info": {
+		"_postman_id": "48478f6a-390c-44a9-98b8-fd836c199e67",
+		"name": "UMDB Project",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "Follow User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/user/:id/follow",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"user",
+								":id",
+								"follow"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "0",
+									"description": "user id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Details By Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/user/:id",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"user",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/user/:id",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"user",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "103"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unfollow User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/user/5/follow",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"user",
+								"5",
+								"follow"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Followed Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/user/followed",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"user",
+								"followed"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Suggested Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/user/suggested",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"user",
+								"suggested"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Most Active Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/user/mostactive",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"user",
+								"mostactive"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit User",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"new_email\":\"updatedEmail@gmail.com\",\r\n    \"new_password\":\"12nooo321\",\r\n    \"new_gender\":\"f\",\r\n    \"new_name\":\"updated\",\r\n    \"new_surname\":\"updated\",\r\n    \"new_country\":\"Italy\",\r\n    \"new_dob\":\"2003-12-09\"\r\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/api/user/:id",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"user",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "78635",
+									"description": "user id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Promote to adminstrator",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\r\n    \"username\":\"manikhero\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/api/user/admin",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"user",
+								"admin"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Movie",
+			"item": [
+				{
+					"name": "Add Movie Neo4j",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"movieId\": \"testID\",\r\n    \"title\": \"TestMovie\",\r\n    \"posterPath\": \"testPoster\",\r\n    \"voteAverage\": 8,\r\n    \"overview\": \"testOverview\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/api/movie",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"movie"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Movie Neo4j",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/movie/:id",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"movie",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "",
+									"description": "movie id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Suggested Movies",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/movie/suggested",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"movie",
+								"suggested"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Movie",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"budget\":0,\r\n    \"cast\":[{\"actor\":\"test\"}],\r\n    \"genres\":[\"Comedy\"],\r\n    \"_id\":\"testMovie\",\r\n    \"overview\":\"nothing\",\r\n    \"popularity\":50,\r\n    \"poster_path\":\"nothing\",\r\n    \"release_date\":\"21/04/2022\",\r\n    \"revenue\":0,\r\n    \"runtime\":81,\r\n    \"spoken_languages\":[\"English\"],\r\n    \"title\":\"testMovie\",\r\n    \"vote_average\":0\r\n  } ",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/api/movie",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"movie"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Retrieve Movie from Mongo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/movie/:id",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"movie",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "tt2293640",
+									"description": "movie id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete movie",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/movie/:id",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"movie",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "tt7589631",
+									"description": "movie id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Movies based on \"popularity\"",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/movie/pop/:p",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"movie",
+								"pop",
+								":p"
+							],
+							"variable": [
+								{
+									"key": "p",
+									"value": "1",
+									"description": "page number"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Movies based on  popularity and genre",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/movie/popg?page=1&genre=family",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"movie",
+								"popg"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "genre",
+									"value": "family"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Movies based on average_vote and year",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"page\":\"\", \"year\":\"\" } ",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/api/movie/topy?page=1&year=2016",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"movie",
+								"topy"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "year",
+									"value": "2016"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Movies based on average_vote and year+genre of choice",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/movie/topyg?page=1&year=2000&genre=Comedy",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"movie",
+								"topyg"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "year",
+									"value": "2000"
+								},
+								{
+									"key": "genre",
+									"value": "Comedy"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get most popular genres per year",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/movie/popg/y",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"movie",
+								"popg",
+								"y"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Search",
+			"item": [
+				{
+					"name": "Search User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/search/user?string=s&page=1&min=4&max=9",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"search",
+								"user"
+							],
+							"query": [
+								{
+									"key": "string",
+									"value": "s"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "min",
+									"value": "4"
+								},
+								{
+									"key": "max",
+									"value": "9"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Movie",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/api/search/movie?title=Toy&genre=Comedy&minRuntime&maxRuntime&minDate&maxDate&language",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"search",
+								"movie"
+							],
+							"query": [
+								{
+									"key": "title",
+									"value": "Toy"
+								},
+								{
+									"key": "genre",
+									"value": "Comedy"
+								},
+								{
+									"key": "minRuntime",
+									"value": null
+								},
+								{
+									"key": "maxRuntime",
+									"value": null
+								},
+								{
+									"key": "minDate",
+									"value": null
+								},
+								{
+									"key": "maxDate",
+									"value": null
+								},
+								{
+									"key": "language",
+									"value": null
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Review",
+			"item": [
+				{
+					"name": "Create Review",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\"movieId\":\"tt0114709\",\r\n\"title\":\"Toy Story\",\r\n\"rating\":5,\r\n\"review_summary\":\"test one\",\r\n\"review_detail\":\" test one\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/api/review",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"review"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Movie Reviews",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/review/:id",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"review",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "tt0114709",
+									"description": "movie id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get More Movie Reviews",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/review/more/:id",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"review",
+								"more",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "tt0114709",
+									"description": "movie id\n"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Review",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/review?review_id=rw15910236&movieId=tt0114709",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"review"
+							],
+							"query": [
+								{
+									"key": "review_id",
+									"value": "rw15910236"
+								},
+								{
+									"key": "movieId",
+									"value": "tt0114709"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Review",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": " {\r\n    \"review_id\":\"rw15910236\",\r\n    \"movieId\":\"tt0114709\",\r\n    \"new_rating\":7,\r\n    \"new_review_summary\":\"new one\",\r\n    \"new_review_detail\":\"edit review\"\r\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/api/review",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"review"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Total Reviews Per Year",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/review/totalrev/year",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"review",
+								"totalrev",
+								"year"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get the distribution of the rating scores per movie",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/review/ratings/:id",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"review",
+								"ratings",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "tt0114709"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Watchlist",
+			"item": [
+				{
+					"name": "Get Watchlist By Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/watchlist/259",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"watchlist",
+								"259"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Watchlists By UserId",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/watchlist/?id=5",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"watchlist",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Watchlist",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/watchlist/:id",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"watchlist",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "321",
+									"description": "watchlist id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Watchlist",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"test_Watchlist2\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/api/watchlist",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"watchlist"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Watchlist",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n \"name\":\"Updated\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/api/watchlist/:id",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"watchlist",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ":id",
+									"description": "watchlist id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Movie From Watchlist",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\"watchlistId\":242,\r\n\"movieId\":\"tt0109950\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/api/watchlist/remove",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"watchlist",
+								"remove"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Follow Watchlist",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/watchlist/:id/follow",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"watchlist",
+								":id",
+								"follow"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "305",
+									"description": "watchlist id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Movie To Watchlist",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"watchlistId\": 242,\r\n    \"movieId\": \"tt0109950\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/api/watchlist/add",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"watchlist",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unfollow Watchlist",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/watchlist/:id/follow",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"watchlist",
+								":id",
+								"follow"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "302",
+									"description": "watchlist id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Followed Watchlists",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/watchlist/followed",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"watchlist",
+								"followed"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Suggested Watchlists",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/watchlist/suggested",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"watchlist",
+								"suggested"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Most Followed Watchlists",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/api/watchlist/mostfollowed",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"watchlist",
+								"mostfollowed"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"ahim\",\r\n    \"email\": \"arsalenx\",\r\n    \"password\": \"pass123456\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/login",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"tedsts_user89919\",\r\n    \"password\": \"tests_password\",\r\n    \"email\": \"tesst859ss@email.com\",\r\n    \"gender\": \"m\",\r\n    \"name\": \"John\",\r\n    \"surname\": \"Doe\",\r\n    \"country\": \"Italy\",\r\n    \"dob\": \"2002-12-09\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/signup",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"signup"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySW5mbyI6eyJ1c2VySWQiOjc4NjMwMTExMTEsInVzZXJuYW1lIjoiYXJzYWxlbiIsInJvbGVzIjpbIlVzZXIiXX0sImlhdCI6MTY1MDYyODI4OCwiZXhwIjoxNjUwNjY0Mjg4fQ.InUlBmNucGJ5ZH_PcnAUZM_sGy-VGGuPPdIj2LspYX0",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

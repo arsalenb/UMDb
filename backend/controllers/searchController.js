@@ -32,10 +32,10 @@ const searchUser = async (req, res) => {
       const session = neo4jdbconnection.session();
       const pagination_results = await session.run(
         `
-        MATCH (u:User)
-        WHERE toUpper(u.username) CONTAINS  toUpper("${searchString}")
-        return {user_name:u.username,user_id:u.user_id} 
-        ORDER BY u.username
+        CALL db.index.fulltext.queryNodes("userSearch", "a")
+        YIELD node,score
+        return {user_name:node.username,user_id:node.user_id}
+        ORDER BY score
         SKIP ${skip}
         LIMIT 7
         `

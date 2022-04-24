@@ -99,15 +99,22 @@ const getMoreReviewsOfMovie = async (req, res) => {
 };
 
 const updateVoteMovieNode = async (movieId, new_avg_vote) => {
+  if (movieId == null || new_avg_vote == null) {
+    throw new Error("Neo4j update vote: Info Missing");
+  }
   try {
     let session = neo4jdbconnection.session();
     const update_vote = await session.run(
       `MATCH (m:Movie {movie_id: "${movieId}"})
-        SET m.vote_average = "${new_avg_vote}"`
+        SET m.vote_average = "${new_avg_vote}"
+        return {movie:m.movie_id,vote_average:m.vote_average}`
     );
-    console.log(update_vote);
+    session.close();
+    if (!update_vote.records[0]) {
+      throw new Error("Neo4j: update unsuccessful");
+    }
   } catch (err) {
-    throw new Error("Neo4j: Updating Vote Average Failed.");
+    throw err;
   }
 };
 
@@ -124,12 +131,7 @@ const updateMovieRatingCreation = async (movie, rating) => {
       vote_average: +newAvgRating.toFixed(1),
       vote_count: newNumVotes,
     };
-    console.log(update);
-    let db = await mongoDriver.mongo();
-    await db
-      .collection("movies")
-      .updateOne({ _id: movie["_id"] }, { $set: update });
-    await updateVoteMovieNode(movie["_id"], newAvgRating.toFixed(1));
+    return update;
   } catch (e) {
     throw e;
   }
@@ -140,23 +142,13 @@ const updateMovieRatingCreation = async (movie, rating) => {
 
 const updateMovieRatingEditing = async (movie, oldRating, newRating) => {
   try {
-    let db = await mongoDriver.mongo();
-    console.log(
-      movie["vote_average"],
-      movie["vote_count"],
-      oldRating,
-      newRating
-    );
     let newAvgRating =
       (movie["vote_average"] * movie["vote_count"] -
         parseInt(oldRating) +
         parseInt(newRating)) /
       movie["vote_count"];
-    let updateNew = { vote_average: +newAvgRating.toFixed(1) };
-    await db
-      .collection("movies")
-      .updateOne({ _id: movie["_id"] }, { $set: updateNew });
-    await updateVoteMovieNode(movie["_id"], newAvgRating.toFixed(1));
+    let updateNew = +newAvgRating.toFixed(1);
+    return updateNew;
   } catch (e) {
     throw e;
   }
@@ -178,10 +170,7 @@ const updateMovieRatingDeleting = async (movie, oldRating, delRating) => {
       vote_average: +newAvgRating.toFixed(1),
       vote_count: newNumVotes,
     };
-    await db
-      .collection("movies")
-      .updateOne({ _id: movie["_id"] }, { $set: update });
-    await updateVoteMovieNode(movie["_id"], newAvgRating.toFixed(1));
+    return update;
   } catch (e) {
     throw e;
   }
@@ -194,6 +183,8 @@ const updateMovieRatingDeleting = async (movie, oldRating, delRating) => {
 const createReview = async (req, res) => {
   const userId = req.claims.id;
   const username = req.claims.username;
+  let newReview = {};
+  let new_reviews = [];
   const { movieId, title, rating, review_summary, review_detail } = req.body;
   if (
     movieId == null ||
@@ -211,7 +202,7 @@ const createReview = async (req, res) => {
       Math.floor(Math.random() * 10000) +
       Math.floor(Math.random() * 10000);
 
-    let newReview = {
+    newReview = {
       _id: "rw" + tot,
       userId: userId,
       reviewer: username,
@@ -224,19 +215,49 @@ const createReview = async (req, res) => {
     };
     let movie = await db.collection("movies").findOne({ _id: movieId });
     if (movie["reviews"].length >= 20) {
-      movie["reviews"].push(newReview);
-      movie["reviews"].shift();
+      new_reviews = movie["reviews"];
+      new_reviews.push(newReview);
+      new_reviews.shift();
     } else {
-      movie["reviews"].push(newReview);
+      new_reviews = movie["reviews"];
+      new_reviews.push(newReview);
     }
-    await db.collection("movies").replaceOne({ _id: movieId }, movie);
-    await db.collection("reviews").insertOne(newReview);
-    await updateMovieRatingCreation(movie, newReview["rating"]);
+
+    try {
+      await db.collection("reviews").insertOne(newReview);
+    } catch (e) {
+      return res
+        .status(400)
+        .json({ message: "Mongo: Review Insertion unsuccessful" });
+    }
+
+    const new_vote = await updateMovieRatingCreation(
+      movie,
+      newReview["rating"]
+    );
+
+    try {
+      await updateVoteMovieNode(movieId, new_vote.vote_average.toFixed(1));
+      await db.collection("movies").updateOne(
+        { _id: movieId },
+        {
+          $set: {
+            reviews: new_reviews,
+            vote_average: new_vote.vote_average,
+            vote_count: new_vote.vote_count,
+          },
+        }
+      );
+    } catch (e) {
+      throw new Error("Update movie vote info unsuccessful");
+    }
     res
       .status(201)
       .json({ review: newReview, message: "Review Added successfully" });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    let db = await mongoDriver.mongo();
+    await db.collection("reviews").deleteOne({ _id: newReview._id });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -246,6 +267,7 @@ const createReview = async (req, res) => {
 
 const editReview = async (req, res) => {
   const userId = req.claims.id;
+  let review_to_edit = {};
   const {
     review_id,
     movieId,
@@ -262,13 +284,16 @@ const editReview = async (req, res) => {
     new_review_detail == null
   )
     return res.status(400).json({ message: "Review Edit Info Missing." });
+
   try {
     let db = await mongoDriver.mongo();
 
     let movie = await db.collection("movies").findOne({ _id: movieId });
-    let review_to_edit = await db
-      .collection("reviews")
-      .findOne({ _id: review_id });
+    review_to_edit = await db.collection("reviews").findOne({ _id: review_id });
+
+    if (!review_to_edit || !movie)
+      return res.status(400).json({ message: "Inexistant Movie or Review Id" });
+
     let rating_to_edit = review_to_edit.rating;
 
     let status = await db.collection("reviews").updateOne(
@@ -283,24 +308,46 @@ const editReview = async (req, res) => {
       }
     );
 
-    if (status["modifiedCount"] === 0) {
-      throw Error("Review Not Found!");
+    let update = await updateMovieRatingEditing(
+      movie,
+      rating_to_edit,
+      new_rating
+    );
+    await updateVoteMovieNode(movieId, update);
+
+    let emb_rev = await getReviewEmbedded(review_id, movieId);
+    if (emb_rev != null) {
+      let review_array_to_update = movie["reviews"];
+      review_array_to_update[emb_rev[1]]["review_summary"] = new_review_summary;
+      review_array_to_update[emb_rev[1]]["review_detail"] = new_review_detail;
+      review_array_to_update[emb_rev[1]]["rating"] = new_rating;
+      review_array_to_update[emb_rev[1]]["review_date"] = new Date(Date.now());
+      await db.collection("movies").updateOne(
+        { _id: movieId },
+        {
+          $set: {
+            vote_average: update,
+            reviews: review_array_to_update,
+          },
+        }
+      );
     } else {
-      let emb_rev = await getReviewEmbedded(review_id, movieId);
-      if (emb_rev != null) {
-        let review_to_update = movie["reviews"][emb_rev[1]];
-        review_to_update["review_summary"] = new_review_summary;
-        review_to_update["review_detail"] = new_review_detail;
-        review_to_update["rating"] = new_rating;
-        await db.collection("movies").replaceOne({ _id: movieId }, movie);
-      }
+      await db.collection("movies").updateOne(
+        { _id: movieId },
+        {
+          $set: {
+            vote_average: update,
+          },
+        }
+      );
     }
-
-    await updateMovieRatingEditing(movie, rating_to_edit, new_rating);
-
     res.status(201).json({ message: "Review Edited successfully" });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    let db = await mongoDriver.mongo();
+    await db
+      .collection("reviews")
+      .replaceOne({ _id: review_id }, review_to_edit);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -311,6 +358,7 @@ const editReview = async (req, res) => {
 const deleteReview = async (req, res) => {
   const review_id = req.query.review_id;
   const movieId = req.query.movieId;
+  let movie_reviews = [];
   if (review_id == null || movieId == null)
     return res.status(400).json({ message: "Review Info Missing." });
 
@@ -321,22 +369,49 @@ const deleteReview = async (req, res) => {
       .findOne({ _id: review_id });
 
     let movie = await db.collection("movies").findOne({ _id: movieId });
-    let oldVoteAverage = movie["vote_average"];
 
+    if (!review_to_delete || !movie)
+      return res.status(400).json({ message: "Inexistant Movie or Review Id" });
+
+    let oldVoteAverage = movie["vote_average"];
+    let delRating = review_to_delete["rating"];
+    const new_vote = await updateMovieRatingDeleting(
+      movie,
+      oldVoteAverage,
+      delRating
+    );
     if (review_to_delete != null) {
+      await updateVoteMovieNode(movieId, new_vote.vote_average.toFixed(1));
       await db.collection("reviews").deleteOne(review_to_delete);
       let x = await getReviewEmbedded(review_id, movieId);
       if (x != null) {
-        movie["reviews"].splice(x[1], 1);
-        await db.collection("movies").replaceOne({ _id: movieId }, movie);
+        movie_reviews = movie["reviews"];
+        movie_reviews.splice(x[1], 1);
+        await db.collection("movies").updateOne(
+          { _id: movieId },
+          {
+            $set: {
+              reviews: movie_reviews,
+              vote_average: new_vote.vote_average,
+              vote_count: new_vote.vote_count,
+            },
+          }
+        );
+      } else {
+        await db.collection("movies").updateOne(
+          { _id: movieId },
+          {
+            $set: {
+              vote_average: new_vote.vote_average,
+              vote_count: new_vote.vote_count,
+            },
+          }
+        );
       }
-      let delRating = review_to_delete["rating"];
-      await updateMovieRatingDeleting(movie, oldVoteAverage, delRating);
-    } else {
     }
     res.status(204).json({ message: "Review Deleted successfully" });
   } catch (e) {
-    throw e;
+    res.status(500).json({ message: "Review Deleting Failed" });
   }
 };
 

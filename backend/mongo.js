@@ -7,6 +7,8 @@ async function mongo() {
     const uri =
       "mongodb://172.16.4.65:27020,172.16.4.64:27020,172.16.4.60:27020/";
     client = new MongoClient(uri, { w: 1, readPreference: "primaryPreferred" });
+    // const uri = "mongodb://localhost:27017";
+    // client = new MongoClient(uri);
     await client.connect();
     db = client.db("umdbMovies");
     return db;
