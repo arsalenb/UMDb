@@ -173,11 +173,11 @@ function Movie() {
             </div>
             <div>
               <span>Stars :</span>
-              {movieData?.cast ? movieData.cast[0].name : <></>}
+              {movieData?.cast ? movieData?.cast[0]?.name : <></>}
               {", "}
-              {movieData?.cast ? movieData.cast[1].name : <></>}
+              {movieData?.cast ? movieData?.cast[1]?.name : <></>}
               {", "}
-              {movieData?.cast ? movieData.cast[2].name : <></>}
+              {movieData?.cast ? movieData?.cast[2]?.name : <></>}
             </div>
 
             <div>

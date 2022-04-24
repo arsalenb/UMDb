@@ -28,11 +28,6 @@ function SuggestedMovies() {
     } catch (err) {}
   };
 
-  useEffect(() => {
-    if (!auth?.username) {
-      navigate("/login");
-    }
-  });
   const posterBaseUrl = "https://image.tmdb.org/t/p/w300";
 
   return (
