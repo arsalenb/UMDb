@@ -33,6 +33,12 @@ MOVIE_DATABASE_PASSWORD="123"
 MOVIE_DATABASE_URL="bolt://172.16.4.64:7687"
 ```
 
+* Edit the Mongo.js file to aim for the cluster or anyother database entrance. (in this case it's already pointed to UNIPI servers)
+```bash
+    const uri ="mongodb://172.16.4.65:27020,172.16.4.64:27020,172.16.4.60:27020/";
+    client = new MongoClient(uri, { w: 1, readPreference: "nearest" });
+```
+
 
 ### Starting the application
 
